@@ -13,7 +13,7 @@ import product1 from '../../assets/images/shop/product/1.png';
 const Checkout: React.FC = () => {
     const isUser = useSelector((state: RootState) => state.auth.user.isAuthenticated) && !!localStorage.getItem('user_accessToken');
     const navigate = useNavigate();
-    const [paymentMethod, setPaymentMethod] = useState('cod');
+    const [paymentMethod, setPaymentMethod] = useState('Manual UPI');
     const [cartItems, setCartItems] = useState<any[]>([]);
     const [subtotal, setSubtotal] = useState(0);
     const [shipping, setShipping] = useState(0);
@@ -436,13 +436,12 @@ const Checkout: React.FC = () => {
             return;
         }
 
-        const isOnline = paymentMethod !== 'cod';
-
         try {
             const orderData: any = {
                 addressId: selectedAddressId,
-                paymentMethod: paymentMethod === 'cod' ? 'COD' : paymentMethod,
-                isOnline: isOnline
+                paymentMethod: 'Manual UPI',
+                isOnline: false,
+                totalAmount: total - appliedDiscount
             };
 
             if (appliedCode.type === 'referral') {
@@ -451,112 +450,11 @@ const Checkout: React.FC = () => {
                 orderData.couponCode = appliedCode.code;
             }
 
-            const res = await userApiClient.post('/user/order', orderData);
-
-            if (res.data.success) {
-                if (isOnline) {
-                    const { razorpayOrderId, amount, key_id, order } = res.data.data;
-console.log(razorpayOrderId,"razprpayid",amount,key_id,order)
-                    const options = {
-                        key: key_id,
-                        amount: amount,
-                        currency: "INR",
-                        name: "Naturalayam",
-                        description: `Order Payment for ${order.orderId}`,
-                        image: "/src/assets/images/favicon.png",
-                        order_id: razorpayOrderId,
-                        // method: 'upi',
-                        config: {
-                            display: {
-                                blocks: {
-                                    upi: {
-                                        name: 'UPI / QR Code',
-                                        instruments: [
-                                            {
-                                                method: 'upi'
-                                            }
-                                        ]
-                                    },
-                                    other_methods: {
-                                        name: 'Other Payment Methods',
-                                        instruments: [
-                                            {
-                                                method: 'card'
-                                            },
-                                            {
-                                                method: 'netbanking'
-                                            },
-                                            {
-                                                method: 'wallet'
-                                            }
-                                        ]
-                                    }
-                                },
-                                sequence: ['block.upi', 'block.other_methods'],
-                            },
-                        },
-                        retry: {
-                            enabled: true,
-                            max_count: 3
-                        },
-                        handler: async (response: any) => {
-                            console.log("[Razorpay] Payment success response:", response);
-                            toast.info("Verifying payment, please wait...");
-                            try {
-                                const verifyRes = await userApiClient.post('/user/order/verify-payment', {
-                                    orderId: order.orderId,
-                                    razorpayPaymentId: response.razorpay_payment_id,
-                                    razorpayOrderId: response.razorpay_order_id,
-                                    razorpaySignature: response.razorpay_signature
-                                });
-
-                                if (verifyRes.data.success) {
-                                    toast.success("Payment verified successfully!");
-                                    window.dispatchEvent(new Event('cart-updated'));
-                                    navigate('/checkout/success', { replace: true });
-                                } else {
-                                    console.error("[Verify] Failed:", verifyRes.data);
-                                    toast.error(verifyRes.data.message || "Payment verification failed.");
-                                }
-                            } catch (err: any) {
-                                console.error("[Verify] API Error:", err);
-                                toast.error(err.response?.data?.message || "Error communicating with server for verification");
-                            }
-                        },
-                        prefill: {
-                            name: formData.name,
-                            email: formData.email,
-                            contact: formData.phone
-                        },
-                        theme: {
-                            color: "#0d6efd"
-                        },
-                        modal: {
-                            ondismiss: function () {
-                                console.log("[Razorpay] Modal closed by user");
-                                toast.warning("Payment modal closed. If money was debited, it will be refunded or order will be updated shortly.");
-                            }
-                        }
-                    };
-
-                    const rzp = new (window as any).Razorpay(options);
-                    rzp.on('payment.failed', function (response: any) {
-                        console.error("[Razorpay] Payment failed event:", response.error);
-                        toast.error(`Payment failed: ${response.error.description}`);
-                    });
-                    rzp.open();
-                } else {
-                    // Clear frontend cart state by notifying components
-                    window.dispatchEvent(new Event('cart-updated'));
-                    toast.success("Order placed successfully!");
-                    navigate('/checkout/success');
-                }
-            } else {
-                toast.error(res.data.message || "Failed to place order.");
-            }
+            // Redirect to Manual Payment page
+            navigate('/manual-payment', { state: orderData });
         } catch (error: any) {
             console.error("Order Place Error:", error);
-            toast.error(error.response?.data?.message || "Failed to process the order");
+            toast.error(error.message || "Failed to proceed to payment");
         }
     };
 
@@ -912,27 +810,13 @@ console.log(razorpayOrderId,"razprpayid",amount,key_id,order)
                                     <div className="accordion-item">
                                         <div className="accordion-header">
                                             <div className="custom-control custom-checkbox">
-                                                <input type="radio" className="form-check-input" name="payment" checked={paymentMethod === 'cod'} onChange={() => setPaymentMethod('cod')} />
-                                                <label className="form-check-label ps-2">Cash on delivery</label>
+                                                <input type="radio" className="form-check-input" name="payment" checked={paymentMethod === 'Manual UPI'} onChange={() => setPaymentMethod('Manual UPI')} />
+                                                <label className="form-check-label ps-2">Manual UPI Payment</label>
                                             </div>
                                         </div>
-                                        {paymentMethod === 'cod' && (
+                                        {paymentMethod === 'Manual UPI' && (
                                             <div className="accordion-body">
-                                                <p className="m-b0">Pay with cash upon delivery.</p>
-                                            </div>
-                                        )}
-                                    </div>
-
-                                    <div className="accordion-item">
-                                        <div className="accordion-header">
-                                            <div className="custom-control custom-checkbox">
-                                                <input type="radio" className="form-check-input" name="payment" checked={paymentMethod === 'online'} onChange={() => setPaymentMethod('online')} />
-                                                <label className="form-check-label ps-2">Online Payment (Razorpay)</label>
-                                            </div>
-                                        </div>
-                                        {paymentMethod === 'online' && (
-                                            <div className="accordion-body">
-                                                <p className="m-b0">Pay securely with UPI, Cards, or Netbanking via Razorpay.</p>
+                                                <p className="m-b0">Pay via UPI and enter the Reference ID to confirm your order.</p>
                                             </div>
                                         )}
                                     </div>

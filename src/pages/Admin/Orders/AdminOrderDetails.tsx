@@ -34,6 +34,11 @@ const AdminOrderDetails: React.FC = () => {
     const [processingRefund, setProcessingRefund] = useState(false);
     const [refundAmount, setRefundAmount] = useState(0);
 
+    // Manual UPI States
+    const [showRejectModal, setShowRejectModal] = useState(false);
+    const [rejectReason, setRejectReason] = useState('');
+    const [verifyingPayment, setVerifyingPayment] = useState(false);
+
     useEffect(() => {
         fetchOrderDetails();
         fetchAgencies();
@@ -211,6 +216,43 @@ const AdminOrderDetails: React.FC = () => {
             toast.error(err.response?.data?.message || 'Failed to update payment status');
         } finally {
             setProcessingRefund(false);
+        }
+    };
+
+    const handleVerifyManualPayment = async () => {
+        if (!window.confirm('Are you sure you want to verify this payment?')) return;
+        setVerifyingPayment(true);
+        try {
+            const res = await apiClient.patch(`/admin/orders/${id}/verify-payment`);
+            if (res.data.success) {
+                toast.success('Payment verified successfully');
+                setOrder(res.data.data);
+            }
+        } catch (err: any) {
+            toast.error(err.response?.data?.message || 'Failed to verify payment');
+        } finally {
+            setVerifyingPayment(false);
+        }
+    };
+
+    const handleRejectManualPayment = async () => {
+        if (!rejectReason.trim()) {
+            toast.warn('Please provide a reason for rejection');
+            return;
+        }
+        setVerifyingPayment(true);
+        try {
+            const res = await apiClient.patch(`/admin/orders/${id}/reject-payment`, { remarks: rejectReason });
+            if (res.data.success) {
+                toast.success('Payment rejected successfully');
+                setOrder(res.data.data);
+                setShowRejectModal(false);
+                setRejectReason('');
+            }
+        } catch (err: any) {
+            toast.error(err.response?.data?.message || 'Failed to reject payment');
+        } finally {
+            setVerifyingPayment(false);
         }
     };
 
@@ -457,7 +499,7 @@ const AdminOrderDetails: React.FC = () => {
                         <div className="billing-summary" style={{ fontSize: '0.95rem' }}>
                             <div className="d-flex justify-content-between mb-2">
                                 <span className="text-muted">Sub Total</span>
-                                <span className="fw-bold">₹{order.totalPrice.toFixed(2)}</span>
+                                <span className="fw-bold">₹{(order.totalPrice ?? order.totalMRP ?? 0).toFixed(2)}</span>
                             </div>
                             {order.couponName && (
                                 <div className="d-flex justify-content-between mb-2">
@@ -473,7 +515,7 @@ const AdminOrderDetails: React.FC = () => {
                             )}
                             <div className="d-flex justify-content-between mb-2">
                                 <span className="text-muted">Discount</span>
-                                <span className="fw-bold text-danger">- ₹{(order.discount || 0).toFixed(2)}</span>
+                                <span className="fw-bold text-danger">- ₹{(order.discount ?? order.totalDiscount ?? 0).toFixed(2)}</span>
                             </div>
                             <div className="d-flex justify-content-between mb-2">
                                 <span className="text-muted">Shipping Charge</span>
@@ -515,6 +557,36 @@ const AdminOrderDetails: React.FC = () => {
                                         </span>
                                     );
                                 })()}
+                                
+                                {order.paymentMethod === 'Manual UPI' && order.paymentReferenceId && (
+                                    <div className="mt-3 p-3 bg-light rounded border">
+                                        <div className="mb-2"><strong>Reference ID:</strong> {order.paymentReferenceId}</div>
+                                        {order.paymentVerificationStatus === 'Pending' && (
+                                            <div className="d-flex gap-2 mt-2">
+                                                <button 
+                                                    className="btn btn-sm btn-success w-50" 
+                                                    onClick={handleVerifyManualPayment}
+                                                    disabled={verifyingPayment}
+                                                >
+                                                    Verify
+                                                </button>
+                                                <button 
+                                                    className="btn btn-sm btn-danger w-50" 
+                                                    onClick={() => setShowRejectModal(true)}
+                                                    disabled={verifyingPayment}
+                                                >
+                                                    Reject
+                                                </button>
+                                            </div>
+                                        )}
+                                        {order.paymentVerificationStatus === 'Verified' && (
+                                            <div className="text-success mt-1 fw-bold"><i className="fas fa-check-circle"></i> Verified</div>
+                                        )}
+                                        {order.paymentVerificationStatus === 'Rejected' && (
+                                            <div className="text-danger mt-1 fw-bold"><i className="fas fa-times-circle"></i> Rejected: {order.verificationRemarks}</div>
+                                        )}
+                                    </div>
+                                )}
                             </div>
                         </div>
                     </div>
@@ -1010,6 +1082,41 @@ const AdminOrderDetails: React.FC = () => {
                                 disabled={processingRefund}
                             >
                                 {processingRefund ? 'Processing...' : 'Mark as Refunded'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Reject Manual Payment Modal */}
+            {showRejectModal && (
+                <div className="cancellation-reason-overlay">
+                    <div className="cancellation-reason-box admin-card p-4">
+                        <h5 className="fw-bold mb-3 text-danger">Reject Payment</h5>
+                        <p className="text-muted small mb-4">Please provide a reason for rejecting this manual payment.</p>
+                        <textarea
+                            className="admin-input w-100 mb-4"
+                            rows={4}
+                            placeholder="e.g. Invalid reference ID, Payment not received..."
+                            value={rejectReason}
+                            onChange={(e) => setRejectReason(e.target.value)}
+                        />
+                        <div className="d-flex justify-content-end gap-2">
+                            <button
+                                className="btn-primary-admin secondary"
+                                style={{ backgroundColor: '#fff', color: '#64748b' }}
+                                onClick={() => { setShowRejectModal(false); setRejectReason(''); }}
+                                disabled={verifyingPayment}
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                className="btn btn-danger"
+                                style={{ borderRadius: '12px', padding: '10px 24px', fontWeight: 600 }}
+                                onClick={handleRejectManualPayment}
+                                disabled={verifyingPayment}
+                            >
+                                Reject Payment
                             </button>
                         </div>
                     </div>

@@ -13,6 +13,7 @@ import AddCoupon from './pages/Admin/Coupons/AddCoupon'
 import AgencyList from './pages/Admin/ShippingAgencies/AgencyList'
 import AgencyForm from './pages/Admin/ShippingAgencies/AgencyForm'
 import ShippingCharges from './pages/Admin/ShippingCharges/ShippingCharges'
+import PaymentSettings from './pages/Admin/Settings/PaymentSettings'
 import AdminProfile from './pages/Admin/Profile/AdminProfile'
 import ProductCategoryOffers from './pages/Admin/Offers/ProductCategoryOffers'
 import AdminComboOffers from './pages/Admin/Offers/ComboOffers'
@@ -28,6 +29,7 @@ import ProductDetails from './pages/ProductDetails/ProductDetails'
 import Offers from './pages/Offers/Offers'
 import Cart from './pages/Cart/Cart'
 import Checkout from './pages/Checkout/Checkout'
+import ManualPayment from './pages/Checkout/ManualPayment'
 import OrderSuccess from './pages/Checkout/OrderSuccess'
 import Login from './pages/Login/Login'
 import Registration from './pages/Registration/Registration'
@@ -146,6 +148,7 @@ function App() {
           <Route path="/admin/shipping-agencies/edit/:id" element={<AgencyForm />} />
           <Route path="/admin/shipping-charges" element={<ShippingCharges />} />
 
+          <Route path="/admin/payment-settings" element={<PaymentSettings />} />
           <Route path="/admin/settings" element={<div className="p-4">Settings Page (Coming Soon)</div>} />
           <Route path="/admin/integrations" element={<div className="p-4">Integrations Page (Coming Soon)</div>} />
         </Route>
@@ -167,6 +170,11 @@ function App() {
                   <Route path="/product/:id" element={<ProductDetails />} />
                   <Route path="/shop-cart" element={<Cart />} />
                   <Route path="/checkout" element={<Checkout />} />
+                  <Route path="/manual-payment" element={
+                    <ProtectedRoute type="user">
+                      <ManualPayment />
+                    </ProtectedRoute>
+                  } />
                   <Route path="/checkout/success" element={<OrderSuccess />} />
                   <Route path="/login" element={
                     <GuestRoute type="user">

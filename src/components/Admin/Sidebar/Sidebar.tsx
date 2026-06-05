@@ -228,6 +228,11 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
                         <Settings size={20} />
                         <span>Settings</span>
                     </NavLink>
+
+                    <NavLink to="/admin/payment-settings" className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'}>
+                        <Wallet size={20} />
+                        <span>Payment Settings</span>
+                    </NavLink>
                 </div>
 
                 <div className="nav-section mt-4">

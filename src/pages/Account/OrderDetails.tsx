@@ -53,15 +53,15 @@ const OrderDetails: React.FC = () => {
         }
     }, [id, isAuthenticated, navigate]);
 
-    const handleReturnOrder = () => {
-        setModalConfig({
-            isOpen: true,
-            productId: 'all',
-            productName: 'Full Order',
-            type: 'return',
-            reason: ''
-        });
-    };
+    // const handleReturnOrder = () => {
+    //     setModalConfig({
+    //         isOpen: true,
+    //         productId: 'all',
+    //         productName: 'Full Order',
+    //         type: 'return',
+    //         reason: ''
+    //     });
+    // };
 
     const handleItemAction = async () => {
         const { productId, type, reason } = modalConfig;
@@ -272,18 +272,21 @@ const OrderDetails: React.FC = () => {
                                         {/* Cancellation Button Logic */}
                                         {(['PLACED', 'PROCESSING', 'PENDING', 'PARTIALLY_PROCESSING'].includes(order.globalOrderStatus) &&
                                             !order.orderedProducts?.some((p: any) => p.orderStatus === 'Cancellation Request')) ? (
-                                            <button
-                                                onClick={() => setModalConfig({
-                                                    isOpen: true,
-                                                    productId: 'all',
-                                                    productName: 'Full Order',
-                                                    type: 'cancel',
-                                                    reason: ''
-                                                })}
-                                                className="btn btn-md btn-outline-danger btnhover20"
-                                            >
-                                                Cancel Order
-                                            </button>
+                                            <>
+                                                {/* Cancel button temporarily hidden as per request */}
+                                                {/* <button
+                                                    onClick={() => setModalConfig({
+                                                        isOpen: true,
+                                                        productId: 'all',
+                                                        productName: 'Full Order',
+                                                        type: 'cancel',
+                                                        reason: ''
+                                                    })}
+                                                    className="btn btn-md btn-outline-danger btnhover20"
+                                                >
+                                                    Cancel Order
+                                                </button> */}
+                                            </>
                                         ) : (order.globalOrderStatus === 'CANCELLED' || order.globalOrderStatus === 'CANCELLATION_REQUEST' || order.globalOrderStatus === 'PARTIALLY_CANCELLED' || order.orderedProducts?.some((p: any) => p.orderStatus === 'Cancellation Request' || p.orderStatus === 'Cancelled')) && (
                                             <div className="alert alert-danger mb-0 py-2 px-3 d-inline-flex align-items-center" style={{ borderRadius: '10px', fontSize: '0.9rem' }}>
                                                 <i className="fa-solid fa-ban me-2"></i>
@@ -293,7 +296,10 @@ const OrderDetails: React.FC = () => {
 
                                         {/* Return Button Logic */}
                                         {isOrderReturnable && !order.orderedProducts?.some((p: any) => p.orderStatus === 'Return Request') ? (
-                                            <button onClick={handleReturnOrder} className="btn btn-md btn-outline-warning btnhover20">Return Order</button>
+                                            <>
+                                                {/* Return button temporarily hidden as per request */}
+                                                {/* <button onClick={handleReturnOrder} className="btn btn-md btn-outline-warning btnhover20">Return Order</button> */}
+                                            </>
                                         ) : (order.globalOrderStatus === 'RETURNED' || order.globalOrderStatus === 'RETURN_REQUEST' || order.globalOrderStatus === 'PARTIALLY_RETURNED' || order.globalOrderStatus === 'RETURN' || order.orderedProducts?.some((p: any) => p.orderStatus === 'Return Request' || p.orderStatus === 'Returned')) && (
                                             <div className="alert alert-warning mb-0 py-2 px-3 d-inline-flex align-items-center" style={{ borderRadius: '10px', fontSize: '0.9rem', color: '#92400e', backgroundColor: '#fffbeb', border: '1px solid #fde68a' }}>
                                                 <i className="fa-solid fa-rotate-left me-2"></i>
@@ -446,6 +452,18 @@ const OrderDetails: React.FC = () => {
                                                     <li>Date : <strong>{formatDate(order.createdAt)}</strong></li>
                                                     <li>Total : <strong>₹{parseFloat(order.totalAmount).toFixed(2)}</strong></li>
                                                     <li>Payment Method : <strong>{order.paymentMethod === 'COD' ? "Cash on Delivery" : order.paymentMethod}</strong></li>
+                                                    {order.paymentMethod === 'Manual UPI' && order.paymentReferenceId && (
+                                                        <>
+                                                            <li>Reference ID : <strong>{order.paymentReferenceId}</strong></li>
+                                                            <li>Payment Status : <strong className={
+                                                                order.paymentVerificationStatus === 'Verified' ? 'text-success' :
+                                                                order.paymentVerificationStatus === 'Rejected' ? 'text-danger' : 'text-warning'
+                                                            }>{order.paymentVerificationStatus}</strong></li>
+                                                            {order.paymentVerificationStatus === 'Rejected' && order.verificationRemarks && (
+                                                                <li>Remarks : <strong className="text-danger">{order.verificationRemarks}</strong></li>
+                                                            )}
+                                                        </>
+                                                    )}
                                                 </ul>
                                             </div>
                                         </div>
