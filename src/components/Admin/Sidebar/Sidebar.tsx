@@ -24,7 +24,7 @@ import {
     Percent,
     Tags,
     Truck,
-    Zap,
+    // Zap,
     LogOut
 } from 'lucide-react';
 import './Sidebar.css';
@@ -160,6 +160,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
                         <span>Subcategories</span>
                     </NavLink>
 
+                    {/* 
                     <NavLink to="/admin/coupons" className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'}>
                         <Percent size={20} />
                         <span>Coupons</span>
@@ -183,6 +184,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
                             </NavLink>
                         </div>
                     </div>
+                    */}
 
                     <NavLink to="/admin/shipping-agencies" className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'}>
                         <Truck size={20} />

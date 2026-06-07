@@ -71,8 +71,20 @@ const ManualPayment: React.FC = () => {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!paymentReferenceId.trim()) {
-            toast.error("Please enter the Payment Reference ID (UTR).");
+        const trimmedRef = paymentReferenceId.trim();
+
+        if (!trimmedRef) {
+            toast.error("Please enter the UPI Transaction / Reference ID.");
+            return;
+        }
+
+        if (!/^\d+$/.test(trimmedRef)) {
+            toast.error("Invalid format. Reference ID must contain digits only without any spaces, letters, or special characters.");
+            return;
+        }
+
+        if (trimmedRef.length < 12) {
+            toast.error("Reference ID must be at least 12 digits long.");
             return;
         }
 
@@ -81,7 +93,7 @@ const ManualPayment: React.FC = () => {
             const payload = {
                 ...checkoutState,
                 paymentMethod: 'Manual UPI',
-                paymentReferenceId: paymentReferenceId.trim(),
+                paymentReferenceId: trimmedRef,
                 isOnline: false // To ensure Razorpay is not triggered
             };
 
@@ -181,7 +193,7 @@ const ManualPayment: React.FC = () => {
                                 <form onSubmit={handleSubmit} className="border-top pt-4">
                                     <div className="mb-4">
                                         <label className="form-label fw-bold text-dark">
-                                            Enter 12-Digit UTR / Reference ID <span className="text-danger">*</span>
+                                            UPI Transaction / Reference ID <span className="text-danger">*</span>
                                         </label>
                                         <div className="input-group input-group-lg">
                                             <span className="input-group-text bg-light border-end-0"><i className="fas fa-hashtag text-muted"></i></span>
@@ -195,7 +207,7 @@ const ManualPayment: React.FC = () => {
                                                 required
                                             />
                                         </div>
-                                        <small className="text-muted mt-2 d-block">You can find the UTR/Reference ID in the transaction details of your UPI app.</small>
+                                        <small className="text-muted mt-2 d-block">You can find the UPI Transaction / Reference ID in the transaction details of your UPI app.</small>
                                     </div>
                                     
                                     <button 

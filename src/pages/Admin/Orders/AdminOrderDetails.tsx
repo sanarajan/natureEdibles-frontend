@@ -219,20 +219,51 @@ const AdminOrderDetails: React.FC = () => {
         }
     };
 
-    const handleVerifyManualPayment = async () => {
-        if (!window.confirm('Are you sure you want to verify this payment?')) return;
-        setVerifyingPayment(true);
-        try {
-            const res = await apiClient.patch(`/admin/orders/${id}/verify-payment`);
-            if (res.data.success) {
-                toast.success('Payment verified successfully');
-                setOrder(res.data.data);
+    const handleVerifyManualPayment = () => {
+        toast(
+            ({ closeToast }) => (
+                <div style={{ textAlign: 'center', padding: '10px' }}>
+                    <h4 style={{ margin: '0 0 10px 0', color: '#333', fontSize: '1.2rem', fontWeight: 600 }}>Verify Payment?</h4>
+                    <p style={{ margin: '0 0 20px 0', fontSize: '0.9rem', color: '#666' }}>Are you sure you want to verify this payment?</p>
+                    <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
+                        <button
+                            onClick={async () => {
+                                closeToast();
+                                setVerifyingPayment(true);
+                                try {
+                                    const res = await apiClient.patch(`/admin/orders/${id}/verify-payment`);
+                                    if (res.data.success) {
+                                        toast.success('Payment verified successfully');
+                                        setOrder(res.data.data);
+                                    }
+                                } catch (err: any) {
+                                    toast.error(err.response?.data?.message || 'Failed to verify payment');
+                                } finally {
+                                    setVerifyingPayment(false);
+                                }
+                            }}
+                            style={{ padding: '8px 16px', background: '#10b981', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 600, flex: 1 }}
+                        >
+                            Yes, verify
+                        </button>
+                        <button
+                            onClick={closeToast as any}
+                            style={{ padding: '8px 16px', background: '#f1f5f9', color: '#475569', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 600, flex: 1 }}
+                        >
+                            Cancel
+                        </button>
+                    </div>
+                </div>
+            ),
+            {
+                position: "top-center",
+                autoClose: false,
+                closeOnClick: false,
+                draggable: false,
+                closeButton: false,
+                toastId: "verify-confirm"
             }
-        } catch (err: any) {
-            toast.error(err.response?.data?.message || 'Failed to verify payment');
-        } finally {
-            setVerifyingPayment(false);
-        }
+        );
     };
 
     const handleRejectManualPayment = async () => {

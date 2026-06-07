@@ -407,22 +407,18 @@ const Checkout: React.FC = () => {
             }
 
             // 2. If coupon not found (404), check if it's a referral code
-            const meRes = await userApiClient.get('/user/auth/me');
-            if (meRes.data.success) {
-                const myInfo = meRes.data.data.user;
-
-                if (myInfo.referralId === code) {
-                    toast.error("You cannot use your own referral code.");
-                    return;
+            try {
+                const referralRes = await userApiClient.post('/user/coupon/validate-referral', { code, amount: subtotal });
+                if (referralRes.data.success) {
+                    const referral = referralRes.data.data.referral;
+                    setAppliedDiscount(referral.discountValue);
+                    setAppliedCode({ code: referral.code, type: 'referral' });
+                    setCouponInput(referral.code);
+                    toast.success("Referral discount applied!");
+                    setIsModalOpen(false);
                 }
-
-                // For referral codes, the backend placeOrder handles the actual validation.
-                // We'll apply it here for UI feedback, but it's "tentative".
-                setAppliedDiscount(subtotal * 0.20);
-                setAppliedCode({ code: code, type: 'referral' });
-                setCouponInput(code);
-                toast.success("Referral discount applied!");
-                setIsModalOpen(false);
+            } catch (referralErr: any) {
+                toast.error(referralErr.response?.data?.message || "Invalid code or application error.");
             }
         } catch (err: any) {
             toast.error(err.response?.data?.message || "Invalid code or application error.");
