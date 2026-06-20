@@ -11,7 +11,7 @@ import { userLoginSuccess, userLogout } from '../../store/authSlice';
 
 // Asset Imports
 import bg1 from '../../assets/images/organic/authentic-organic-staples-79.jpeg';
-import profileImgFallback from '../../assets/images/organic/bg1-OMNFaBaB.png'; // fallback
+import profileImgFallback from '../../assets/images/organic/bg1-omnfabab.png'; // fallback
 
 const Profile: React.FC = () => {
     const dispatch = useDispatch();

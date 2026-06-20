@@ -63,7 +63,7 @@ import cosmeticMed8 from '../../assets/images/organic/authentic-organic-staples-
 import cosmeticMed9 from '../../assets/images/organic/authentic-organic-staples-79.jpeg';
 
 // Map & Companies
-import map2 from '../../assets/images/organic/bg1-OMNFaBaB.png';
+import map2 from '../../assets/images/organic/bg1-omnfabab.png';
 import mapLine from '../../assets/images/organic/healthy-farm-fresh-food-17.jpeg';
 // @ts-ignore
 import company1 from '../../assets/images/organic/healthy-farm-fresh-food-22.jpeg';
