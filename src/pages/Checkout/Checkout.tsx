@@ -7,8 +7,8 @@ import './Checkout.css';
 import { toast } from 'react-toastify';
 
 // Asset Imports
-import bg2 from '../../assets/images/background/bg2.jpg';
-import product1 from '../../assets/images/shop/product/1.png';
+import bg2 from '../../assets/images/organic/healthy-farm-fresh-food-52.jpeg';
+import product1 from '../../assets/images/organic/healthy-farm-fresh-food-57.jpeg';
 
 const Checkout: React.FC = () => {
     const isUser = useSelector((state: RootState) => state.auth.user.isAuthenticated) && !!localStorage.getItem('user_accessToken');

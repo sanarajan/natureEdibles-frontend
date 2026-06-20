@@ -5,8 +5,8 @@ import type { RootState } from '../../store';
 import userApiClient from '../../services/userApiClient';
 
 // Asset Imports
-import bg1 from '../../assets/images/background/bg1.jpg';
-import profileImgFallback from '../../assets/images/profile4.jpg'; // fallback
+import bg1 from '../../assets/images/organic/authentic-organic-staples-69.jpeg';
+import profileImgFallback from '../../assets/images/organic/authentic-organic-staples-74.jpeg'; // fallback
 
 const Address: React.FC = () => {
     const navigate = useNavigate();

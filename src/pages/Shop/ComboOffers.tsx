@@ -6,7 +6,7 @@ import { useSelector } from 'react-redux';
 import type { RootState } from '../../store';
 import Header from '../../components/Header/Header';
 import Footer from '../../components/Footer/Footer';
-import bgBanner from '../../assets/images/background/bg1.jpg';
+import bgBanner from '../../assets/images/organic/premium-organic-pulses-76.jpeg';
 
 interface ComboProduct {
     productId: {

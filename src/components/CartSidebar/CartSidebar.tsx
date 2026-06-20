@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import userApiClient from '../../services/userApiClient';
 import type { RootState } from '../../store';
-import product1 from '../../assets/images/shop/product/1.png';
+import product1 from '../../assets/images/organic/authentic-organic-staples-19.jpeg';
 
 interface CartSidebarProps {
     activeTab: 'cart' | 'wishlist';

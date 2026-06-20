@@ -5,7 +5,7 @@ import type { RootState } from '../../store';
 import { handleAddToCartGlobal, handleToggleWishlistGlobal } from '../../utils/CartHelper';
 
 // Asset Imports
-import product1 from '../../assets/images/shop/product/1.png';
+import product1 from '../../assets/images/organic/authentic-organic-staples-24.jpeg';
 
 interface Product {
     _id: string;

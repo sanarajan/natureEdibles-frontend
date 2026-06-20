@@ -5,7 +5,7 @@ import { toast } from 'react-toastify';
 import { adminLogout } from '../../../store/authSlice';
 import { adminAuthService } from '../../../services/admin/adminAuthService';
 import type { RootState } from '../../../store';
-import noimage from '../../../assets/images/noimage.png';
+import noimage from '../../../assets/images/organic/authentic-organic-staples-14.jpeg';
 import {
     Search,
     Sun,
@@ -24,7 +24,7 @@ const Topbar: React.FC = () => {
     const navigate = useNavigate();
     const adminData = useSelector((state: RootState) => state.auth.admin.data);
     const adminName = adminData?.name || adminData?.displayName || 'Admin';
-    const adminEmail = adminData?.email || 'admin@naturalayam.com';
+    const adminEmail = adminData?.email || 'admin@naturaledibles.in';
     const adminPhoto = adminData?.imageUrl || noimage;
 
     const handleLogout = () => {

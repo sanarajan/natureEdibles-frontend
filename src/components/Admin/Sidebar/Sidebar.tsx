@@ -98,10 +98,10 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
             <div className="sidebar-header">
                 <div className="logo">
                     <div className="logo-icon-wrapper" style={{ background: 'none' }}>
-                        <img src={logo} alt="Naturalayam" style={{ height: '35px', width: 'auto' }} />
+                        <img src={logo} alt="Natural Edibles" style={{ height: '35px', width: 'auto' }} />
                     </div>
                     <div className="logo-details">
-                        <span className="logo-text">Naturalayam</span>
+                        <span className="logo-text">Natural Edibles</span>
                         <span className="logo-subtext">Online Shopping</span>
                     </div>
                 </div>

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { userAuthService } from '../../services/user/userAuthService';
-import pic2 from '../../assets/images/registration/pic2.jpg';
+import pic2 from '../../assets/images/organic/premium-organic-pulses-71.jpeg';
 
 const VerifyEmail: React.FC = () => {
     const [searchParams] = useSearchParams();
@@ -79,7 +79,7 @@ const VerifyEmail: React.FC = () => {
                     <div className="col-xxl-6 col-xl-6 col-lg-6 d-none d-lg-block p-0">
                         <div className="banner-login min-vh-100 d-flex align-items-end" style={{ backgroundImage: `url(${pic2})`, backgroundSize: 'cover', backgroundPosition: 'center' }}>
                             <div className="banner-content p-5 text-white bg-dark bg-opacity-50 w-100">
-                                <h2 className="title mb-3">Serums, the alchemy of skincare, unlock the secrets of radiant beauty with every drop.</h2>
+                                <h2 className="title mb-3">Organic food, the alchemy of nature, unlocks the secrets of radiant health with every bite.</h2>
                                 <div className="rating-box">
                                     <h4 className="rating-title">Sophie Hall</h4>
                                 </div>

@@ -1,10 +1,10 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import logo from '../../assets/images/logo.png';
-import footerImg from '../../assets/images/footer-img.png';
-import smallProduct1 from '../../assets/images/shop/product/small/1.png';
-import smallProduct2 from '../../assets/images/shop/product/small/2.png';
-import smallProduct3 from '../../assets/images/shop/product/small/3.png';
+const logo = '/liveimages/natural-edibles-spices-70.jpeg';
+const footerImg = '/liveimages/authentic-organic-staples-34.jpeg';
+const smallProduct1 = '/liveimages/premium-organic-pulses-66.jpeg';
+const smallProduct2 = '/liveimages/healthy-farm-fresh-food-22.jpeg';
+const smallProduct3 = '/liveimages/authentic-organic-staples-79.jpeg';
 
 const Footer: React.FC = () => {
     return (
@@ -24,7 +24,7 @@ const Footer: React.FC = () => {
 </p>
                                     </li>
                                     <li>
-                                        <p><span>E-mail</span> : info@naturalayam.com</p>
+                                        <p><span>E-mail</span> : info@naturaledibles.in</p>
                                     </li>
                                     <li>
                                         <p><span>Phone</span> : 917902601096
@@ -62,7 +62,7 @@ const Footer: React.FC = () => {
                                             <img src={smallProduct1} alt="" />
                                         </div>
                                         <div className="dz-content">
-                                            <h6 className="name"><a href="javascript:void(0);">Hydrated Supple Skin</a></h6>
+                                            <h6 className="name"><a href="javascript:void(0);">Benefits of Organic Eating</a></h6>
                                             <span className="time">July 23, 2023</span>
                                         </div>
                                     </li>
@@ -71,7 +71,7 @@ const Footer: React.FC = () => {
                                             <img src={smallProduct2} alt="" />
                                         </div>
                                         <div className="dz-content">
-                                            <h6 className="name"><a href="javascript:void(0);">Glowing Radiant Skin</a></h6>
+                                            <h6 className="name"><a href="javascript:void(0);">Farm Fresh Produce</a></h6>
                                             <span className="time">July 23, 2023</span>
                                         </div>
                                     </li>
@@ -80,7 +80,7 @@ const Footer: React.FC = () => {
                                             <img src={smallProduct3} alt="" />
                                         </div>
                                         <div className="dz-content">
-                                            <h6 className="name"><a href="javascript:void(0);">Silky Soft Skin</a></h6>
+                                            <h6 className="name"><a href="javascript:void(0);">Natural Edibles Journey</a></h6>
                                             <span className="time">July 23, 2023</span>
                                         </div>
                                     </li>
@@ -138,7 +138,7 @@ const Footer: React.FC = () => {
     <div className="d-flex align-items-center gap-3 social-icons-footer">
         
         <a
-            href="https://www.instagram.com/naturalayam/reels/"
+            href="https://www.instagram.com/naturaledibles/reels/"
             target="_blank"
             rel="noopener noreferrer"
             className="social-icon"
@@ -147,7 +147,7 @@ const Footer: React.FC = () => {
         </a>
 
         <a
-            href="https://www.facebook.com/Naturalayam/"
+            href="https://www.facebook.com/naturaledibles/"
             target="_blank"
             rel="noopener noreferrer"
             className="social-icon"
@@ -156,7 +156,7 @@ const Footer: React.FC = () => {
         </a>
 
         <a
-            href="https://www.youtube.com/@Naturalayam"
+            href="https://www.youtube.com/@NaturalEdibles"
             target="_blank"
             rel="noopener noreferrer"
             className="social-icon"

@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import bg2 from '../../assets/images/background/bg2.jpg';
+import bg2 from '../../assets/images/organic/healthy-farm-fresh-food-62.jpeg';
 
 const OrderSuccess: React.FC = () => {
     return (

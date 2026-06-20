@@ -12,7 +12,7 @@ import {
 } from 'lucide-react';
 import { useSelector } from 'react-redux';
 import type { RootState } from '../../../store';
-import noimage from '../../../assets/images/noimage.png';
+import noimage from '../../../assets/images/organic/healthy-farm-fresh-food-27.jpeg';
 import './Dashboard.css';
 
 const data = [

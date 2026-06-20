@@ -2,14 +2,14 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 
 // Asset Imports
-import cosmetic1 from '../../assets/images/cosmetic/1.png';
-import cosmetic2 from '../../assets/images/cosmetic/2.png';
-import cosmetic3 from '../../assets/images/cosmetic/3.png';
-import cosmetic4 from '../../assets/images/cosmetic/4.png';
-import cosmetic5 from '../../assets/images/cosmetic/5.png';
-import cosmetic6 from '../../assets/images/cosmetic/6.png';
-import cosmetic7 from '../../assets/images/cosmetic/7.png';
-import cosmetic8 from '../../assets/images/cosmetic/8.png';
+import cosmetic1 from '../../assets/images/organic/authentic-organic-staples-29.jpeg';
+import cosmetic2 from '../../assets/images/organic/authentic-organic-staples-34.jpeg';
+import cosmetic3 from '../../assets/images/organic/authentic-organic-staples-39.jpeg';
+import cosmetic4 from '../../assets/images/organic/authentic-organic-staples-44.jpeg';
+import cosmetic5 from '../../assets/images/organic/authentic-organic-staples-49.jpeg';
+import cosmetic6 from '../../assets/images/organic/authentic-organic-staples-54.jpeg';
+import cosmetic7 from '../../assets/images/organic/authentic-organic-staples-59.jpeg';
+import cosmetic8 from '../../assets/images/organic/authentic-organic-staples-64.jpeg';
 
 const SearchSidebar: React.FC = () => {
     const popularProducts = [

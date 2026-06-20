@@ -6,8 +6,8 @@ import userApiClient from '../../services/userApiClient';
 import { toast } from 'react-toastify';
 
 // Asset Imports
-import bg1 from '../../assets/images/background/bg1.jpg';
-import profileImgFallback from '../../assets/images/profile4.jpg'; // fallback
+import bg1 from '../../assets/images/organic/healthy-farm-fresh-food-17.jpeg';
+import profileImgFallback from '../../assets/images/organic/healthy-farm-fresh-food-22.jpeg'; // fallback
 
 const ShippingAddress: React.FC = () => {
     const navigate = useNavigate();

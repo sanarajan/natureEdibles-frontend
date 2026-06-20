@@ -7,9 +7,9 @@ import type { RootState } from '../../store';
 import '../../styles/cart.css';
 
 // Asset Imports
-import bg1 from '../../assets/images/background/bg1.jpg';
-import product1 from '../../assets/images/shop/product/1.png';
-import iconPic2 from '../../assets/images/shop/shop-cart/icon-box/pic2.png';
+import bg1 from '../../assets/images/organic/healthy-farm-fresh-food-37.jpeg';
+import product1 from '../../assets/images/organic/healthy-farm-fresh-food-42.jpeg';
+import iconPic2 from '../../assets/images/organic/healthy-farm-fresh-food-47.jpeg';
 
 interface CartItem {
     product: {

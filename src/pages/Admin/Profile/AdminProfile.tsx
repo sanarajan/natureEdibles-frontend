@@ -5,14 +5,14 @@ import { adminLoginSuccess } from '../../../store/authSlice';
 import { adminAuthService } from '../../../services/admin/adminAuthService';
 import { toast } from 'react-toastify';
 import { User, Mail, Shield, Camera, X, Lock } from 'lucide-react';
-import noimage from '../../../assets/images/noimage.png';
+import noimage from '../../../assets/images/organic/healthy-farm-fresh-food-32.jpeg';
 import './AdminProfile.css';
 
 const AdminProfile: React.FC = () => {
     const dispatch = useDispatch();
     const adminData = useSelector((state: RootState) => state.auth.admin.data);
     const adminName = adminData?.name || adminData?.displayName || 'Admin';
-    const adminEmail = adminData?.email || 'admin@naturalayam.com';
+    const adminEmail = adminData?.email || 'admin@naturaledibles.in';
     const adminPhoto = adminData?.imageUrl || noimage;
 
     const [showResetModal, setShowResetModal] = useState(false);
@@ -113,7 +113,7 @@ const AdminProfile: React.FC = () => {
                         </div>
                         <div className="profile-intro">
                             <h2 className="profile-name">{adminName}</h2>
-                            <p className="profile-role">Naturalayam Store Owner</p>
+                            <p className="profile-role">Natural Edibles Store Owner</p>
                         </div>
                     </div>
 

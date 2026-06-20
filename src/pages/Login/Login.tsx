@@ -8,7 +8,7 @@ import { useLocation } from 'react-router-dom';
 import { API_ENDPOINTS } from '../../constants/apiEndpoints';
 
 // Asset Imports
-import pic1 from '../../assets/images/registration/pic1.jpg';
+import pic1 from '../../assets/images/organic/natural-edibles-spices-75.jpeg';
 
 const Login: React.FC = () => {
     const [email, setEmail] = useState('');

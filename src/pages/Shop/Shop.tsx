@@ -6,8 +6,8 @@ import { useSelector } from 'react-redux';
 import type { RootState } from '../../store';
 
 // Asset Imports
-import bg1 from '../../assets/images/background/bg1.jpg';
-import product1 from '../../assets/images/shop/product/1.png';
+import bg1 from '../../assets/images/organic/premium-organic-pulses-81.jpeg';
+import product1 from '../../assets/images/organic/pure-natural-ingredients-63.jpeg';
 
 // Star rating renderer
 const StarRating = ({ count }: { count: number }) => (
@@ -103,7 +103,7 @@ const QuickViewModal = ({ prod, onClose, inWishlist, onToggleWishlist, handleAdd
                     </div>
 
                     <p style={{ margin: 0, fontSize: '15px', color: '#555', lineHeight: '1.6' }}>
-                        High quality product from Naturalayam.
+                        High quality product from Natural Edibles.
                     </p>
 
                     <div style={{ display: 'flex', alignItems: 'flex-start', gap: '60px', marginTop: '10px' }}>
@@ -670,7 +670,7 @@ const Shop: React.FC = () => {
                                                                 <div className="review-num"><StarRating count={4} /><span> 150 Review</span></div>
                                                             </div>
                                                             <div className="dz-body">
-                                                                <p className="dz-para">High quality ayurvedic product from Naturalayam.</p>
+                                                                <p className="dz-para">High quality organic product from Natural Edibles.</p>
                                                                 <div className="rate">
                                                                     <div className="d-flex align-items-center mb-xl-3 mb-2">
                                                                         <div className="meta-content">
