@@ -8,7 +8,8 @@ import {
     ShoppingBag,
     DollarSign,
     TrendingUp,
-    Calendar
+    Calendar,
+    Activity
 } from 'lucide-react';
 import { useSelector } from 'react-redux';
 import type { RootState } from '../../../store';
@@ -178,6 +179,26 @@ const Dashboard: React.FC = () => {
                         <ResponsiveContainer width="100%" height={100}>
                             <AreaChart data={data}>
                                 <Area type="monotone" dataKey="revenue" stroke="#A8D5BA" fillOpacity={0} strokeWidth={2} strokeDasharray="5 5" />
+                            </AreaChart>
+                        </ResponsiveContainer>
+                    </div>
+                </div>
+
+                <div className="main-stats-card chart-card">
+                    <div className="card-header-flex">
+                        <div>
+                            <div className="icon-badge" style={{ backgroundColor: '#e6f4ea', color: '#1e8e3e' }}><Activity size={20} /></div>
+                            <h3 className="card-title">Consultations</h3>
+                            <p className="card-subtitle">Pending Bookings <span className="trend-up">▲ 2</span></p>
+                        </div>
+                        <button className="btn-more"><MoreVertical size={18} /></button>
+                    </div>
+                    <div className="chart-value">14</div>
+                    <p className="chart-label">Total Consultations</p>
+                    <div className="chart-container-small">
+                        <ResponsiveContainer width="100%" height={100}>
+                            <AreaChart data={data}>
+                                <Area type="monotone" dataKey="orders" stroke="#1e8e3e" fillOpacity={0.2} fill="#1e8e3e" strokeWidth={2} />
                             </AreaChart>
                         </ResponsiveContainer>
                     </div>

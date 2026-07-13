@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { useSelector } from 'react-redux';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 const logo = '/images/logo.jpeg';
@@ -17,7 +18,15 @@ const Header: React.FC = () => {
     const isHome = location.pathname === '/';
 
     const [activeTab, setActiveTab] = useState<'cart' | 'wishlist'>('cart');
-    const [isLoggedIn, setIsLoggedIn] = useState(!!localStorage.getItem('user_accessToken'));
+    const [isLoggedInLocal, setIsLoggedInLocal] = useState(!!localStorage.getItem('user_accessToken'));
+    const reduxIsAuthenticated = useSelector((state: any) => state.auth?.user?.isAuthenticated);
+    const localUserStr = localStorage.getItem('user_data');
+    let localUser = null;
+    if (localUserStr) {
+        try { localUser = JSON.parse(localUserStr); } catch (e) {}
+    }
+    const hasLocalUserRole = localUser ? (localUser.role === 'user' || localUser.role === 'USER' || !localUser.role) : false;
+    const isLoggedIn = isLoggedInLocal || reduxIsAuthenticated || hasLocalUserRole;
     const [cartCount, setCartCount] = useState(0);
     const [wishlistCount, setWishlistCount] = useState(0);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -41,7 +50,7 @@ const Header: React.FC = () => {
         };
 
         const checkLogin = () => {
-            setIsLoggedIn(!!localStorage.getItem('user_accessToken'));
+            setIsLoggedInLocal(!!localStorage.getItem('user_accessToken'));
         };
 
         const updateCartCount = async () => {
@@ -172,7 +181,7 @@ const Header: React.FC = () => {
         }
         localStorage.removeItem('user_accessToken');
         localStorage.removeItem('user_data');
-        setIsLoggedIn(false);
+        setIsLoggedInLocal(false);
         navigate('/login');
         toast.success("Successfully logged out", { position: "top-right", autoClose: 3000 });
     };
@@ -237,6 +246,11 @@ const Header: React.FC = () => {
                                 <li className="has-mega-menu sub-menu-down">
                                     <Link to="/contact" onClick={closeNavbar}><span>Contact</span></Link>
                                 </li>
+                                {isLoggedIn && (
+                                    <li className="has-mega-menu sub-menu-down">
+                                        <Link to="/consultation-booking" onClick={closeNavbar}><span>Consultation Booking</span></Link>
+                                    </li>
+                                )}
                             </ul>
                         </div>
 

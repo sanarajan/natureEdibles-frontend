@@ -1,0 +1,517 @@
+﻿diff --git a/src/pages/Home/Home.tsx b/src/pages/Home/Home.tsx
+index d451d24..ed0a37d 100644
+--- a/src/pages/Home/Home.tsx
++++ b/src/pages/Home/Home.tsx
+@@ -13,83 +13,92 @@ import 'swiper/css/navigation';
+ 
+ // Asset Imports - Banner & General
+ import lineSvg from '../../assets/images/line.svg';
+-import bannerMedia1 from '../../assets/images/banner/banner-media1.png';
+-import bannerBg1 from '../../assets/images/banner/bg1.png';
+-import smallPic1 from '../../assets/images/shop/small/pic1.png';
+-import smallPic2 from '../../assets/images/shop/small/pic2.png';
+-import collection1 from '../../assets/images/collection/1.png';
+-import collection2 from '../../assets/images/collection/2.png';
+-import collection3 from '../../assets/images/collection/3.png';
++import bannerMedia1 from '../../assets/images/organic/healthy-farm-fresh-food-67.jpeg';
++const bannerBg1 = '/liveimages/bg1-OMNFaBaB.PNG';
++import smallPic1 from '../../assets/images/organic/healthy-farm-fresh-food-72.jpeg';
++import smallPic2 from '../../assets/images/organic/healthy-farm-fresh-food-77.jpeg';
++import collection1 from '../../assets/images/organic/natural-edibles-spices-30.jpeg';
++import collection2 from '../../assets/images/organic/natural-edibles-spices-35.jpeg';
++import collection3 from '../../assets/images/organic/natural-edibles-spices-40.jpeg';
+ 
+ // Categories & About
+-import beauty1 from '../../assets/images/beauty/1.jpg';
+-import beauty2 from '../../assets/images/beauty/2.jpg';
+-import beauty4 from '../../assets/images/beauty/4.jpg';
+-import beauty6 from '../../assets/images/beauty/6.jpg';
++import beauty1 from '../../assets/images/organic/natural-edibles-spices-45.jpeg';
++import beauty2 from '../../assets/images/organic/natural-edibles-spices-50.jpeg';
++import beauty4 from '../../assets/images/organic/natural-edibles-spices-55.jpeg';
++import beauty6 from '../../assets/images/organic/natural-edibles-spices-60.jpeg';
+ 
+-import aboutPic from '../../assets/images/about/pic.jpg';
+-import aboutPic1 from '../../assets/images/about/pic1.jpg';
+-import aboutPic2 from '../../assets/images/about/pic2.jpg';
+-import about2 from '../../assets/images/banner/about2.png';
+-import about3 from '../../assets/images/banner/about3.png';
+-import about4 from '../../assets/images/banner/about4.png';
+-import profilePic12 from '../../assets/images/about/pic12.jpg';
++import aboutPic from '../../assets/images/organic/natural-edibles-spices-65.jpeg';
++import aboutPic1 from '../../assets/images/organic/natural-edibles-spices-70.jpeg';
++import aboutPic2 from '../../assets/images/organic/natural-edibles-spices-75.jpeg';
++import about2 from '../../assets/images/organic/natural-edibles-spices-80.jpeg';
++import about3 from '../../assets/images/organic/premium-organic-pulses-66.jpeg';
++import about4 from '../../assets/images/organic/premium-organic-pulses-71.jpeg';
++import profilePic12 from '../../assets/images/organic/premium-organic-pulses-76.jpeg';
+ 
+ // Products
+-import product1 from '../../assets/images/shop/product/1.png';
+-import product2 from '../../assets/images/shop/product/2.png';
+-import product4 from '../../assets/images/shop/product/4.png';
+-import product5 from '../../assets/images/shop/product/5.png';
++import product1 from '../../assets/images/organic/premium-organic-pulses-81.jpeg';
++import product2 from '../../assets/images/organic/pure-natural-ingredients-63.jpeg';
++import product4 from '../../assets/images/organic/pure-natural-ingredients-68.jpeg';
++import product5 from '../../assets/images/organic/pure-natural-ingredients-73.jpeg';
+ 
+ 
+ // Cosmetic & Offers
+-import cosmeticLarge1 from '../../assets/images/cosmetic/large/1.png';
+-import cosmeticLarge2 from '../../assets/images/cosmetic/large/2.png';
+-import cosmeticLarge3 from '../../assets/images/cosmetic/large/3.png';
+-import cosmeticLarge4 from '../../assets/images/cosmetic/large/4.png';
+-import cosmeticLarge5 from '../../assets/images/cosmetic/large/5.png';
+-import cosmeticLarge6 from '../../assets/images/cosmetic/large/6.png';
+-import cosmeticLarge7 from '../../assets/images/cosmetic/large/7.png';
+-import cosmeticMed1 from '../../assets/images/cosmetic/medium/1.png';
+-import cosmeticMed2 from '../../assets/images/cosmetic/medium/2.png';
+-import cosmeticMed3 from '../../assets/images/cosmetic/medium/3.png';
+-import cosmeticMed4 from '../../assets/images/cosmetic/medium/4.png';
+-import cosmeticMed6 from '../../assets/images/shop/product/medium/6.png';
+-import cosmeticMed7 from '../../assets/images/shop/product/medium/7.png';
+-import cosmeticMed8 from '../../assets/images/shop/product/medium/8.png';
+-import cosmeticMed9 from '../../assets/images/shop/product/medium/9.png';
++import cosmeticLarge1 from '../../assets/images/organic/pure-natural-ingredients-78.jpeg';
++import cosmeticLarge2 from '../../assets/images/organic/authentic-organic-staples-14.jpeg';
++import cosmeticLarge3 from '../../assets/images/organic/authentic-organic-staples-19.jpeg';
++import cosmeticLarge4 from '../../assets/images/organic/authentic-organic-staples-24.jpeg';
++// @ts-ignore
++import cosmeticLarge5 from '../../assets/images/organic/authentic-organic-staples-29.jpeg';
++// @ts-ignore
++import cosmeticLarge6 from '../../assets/images/organic/authentic-organic-staples-34.jpeg';
++// @ts-ignore
++import cosmeticLarge7 from '../../assets/images/organic/authentic-organic-staples-39.jpeg';
++import cosmeticMed1 from '../../assets/images/organic/authentic-organic-staples-44.jpeg';
++import cosmeticMed2 from '../../assets/images/organic/authentic-organic-staples-49.jpeg';
++import cosmeticMed3 from '../../assets/images/organic/authentic-organic-staples-54.jpeg';
++import cosmeticMed4 from '../../assets/images/organic/authentic-organic-staples-59.jpeg';
++import cosmeticMed6 from '../../assets/images/organic/authentic-organic-staples-64.jpeg';
++import cosmeticMed7 from '../../assets/images/organic/authentic-organic-staples-69.jpeg';
++import cosmeticMed8 from '../../assets/images/organic/authentic-organic-staples-74.jpeg';
++import cosmeticMed9 from '../../assets/images/organic/authentic-organic-staples-79.jpeg';
+ 
+ // Map & Companies
+-import map2 from '../../assets/images/map/map2.png';
+-import mapLine from '../../assets/images/map/map-line.png';
+-import company1 from '../../assets/images/companies/1.jpg';
+-import company2 from '../../assets/images/companies/2.jpg';
++import map2 from '../../assets/images/organic/bg1-omnfabab.png';
++import mapLine from '../../assets/images/organic/healthy-farm-fresh-food-17.jpeg';
++// @ts-ignore
++import company1 from '../../assets/images/organic/healthy-farm-fresh-food-22.jpeg';
++// @ts-ignore
++import company2 from '../../assets/images/organic/healthy-farm-fresh-food-27.jpeg';
++// @ts-ignore
+ import companyLogo1 from '../../assets/images/companies/logo/logo1.png';
++// @ts-ignore
+ import companyLogo2 from '../../assets/images/companies/logo/logo2.png';
++// @ts-ignore
+ import companyLogo3 from '../../assets/images/companies/logo/logo3.png';
++// @ts-ignore
+ import companyLogo4 from '../../assets/images/companies/logo/logo4.png';
+ 
+ // Blog & Instagram
+-import blog1 from '../../assets/images/banner/blog1.png';
+-import blog2 from '../../assets/images/banner/blog2.png';
+-import blog3 from '../../assets/images/banner/blog3.png';
+-import blog4 from '../../assets/images/banner/blog4.png';
+-import blog5 from '../../assets/images/banner/blog5.png';
+-import insta1 from '../../assets/images/beauty-post/feature/1.png';
+-import insta2 from '../../assets/images/beauty-post/feature/2.png';
+-import insta3 from '../../assets/images/beauty-post/feature/3.png';
+-import insta4 from '../../assets/images/beauty-post/feature/4.png';
+-import insta5 from '../../assets/images/beauty-post/feature/5.png';
+-import insta6 from '../../assets/images/beauty-post/feature/6.png';
+-import insta7 from '../../assets/images/beauty-post/feature/7.png';
+-import insta8 from '../../assets/images/beauty-post/feature/8.png';
+-import insta9 from '../../assets/images/beauty-post/feature/9.png';
+-import insta10 from '../../assets/images/beauty-post/feature/10.png';
+-import insta11 from '../../assets/images/beauty-post/feature/11.png';
+-import insta12 from '../../assets/images/beauty-post/feature/12.png';
++import blog1 from '../../assets/images/organic/healthy-farm-fresh-food-32.jpeg';
++import blog2 from '../../assets/images/organic/healthy-farm-fresh-food-37.jpeg';
++import blog3 from '../../assets/images/organic/healthy-farm-fresh-food-42.jpeg';
++import blog4 from '../../assets/images/organic/healthy-farm-fresh-food-47.jpeg';
++import blog5 from '../../assets/images/organic/healthy-farm-fresh-food-52.jpeg';
++import insta1 from '../../assets/images/organic/healthy-farm-fresh-food-57.jpeg';
++import insta2 from '../../assets/images/organic/healthy-farm-fresh-food-62.jpeg';
++import insta3 from '../../assets/images/organic/healthy-farm-fresh-food-67.jpeg';
++import insta4 from '../../assets/images/organic/healthy-farm-fresh-food-72.jpeg';
++import insta5 from '../../assets/images/organic/healthy-farm-fresh-food-77.jpeg';
++import insta6 from '../../assets/images/organic/natural-edibles-spices-30.jpeg';
++import insta7 from '../../assets/images/organic/natural-edibles-spices-35.jpeg';
++import insta8 from '../../assets/images/organic/natural-edibles-spices-40.jpeg';
++import insta9 from '../../assets/images/organic/natural-edibles-spices-45.jpeg';
++import insta10 from '../../assets/images/organic/natural-edibles-spices-50.jpeg';
++import insta11 from '../../assets/images/organic/natural-edibles-spices-55.jpeg';
++import insta12 from '../../assets/images/organic/natural-edibles-spices-60.jpeg';
+ 
+-import shopPng from '../../assets/images/banner/shop.png';
+-import starPng from '../../assets/images/star.png';
++import shopPng from '../../assets/images/organic/natural-edibles-spices-65.jpeg';
++import starPng from '../../assets/images/organic/natural-edibles-spices-70.jpeg';
+ import QuickViewModal from '../../components/QuickViewModal/QuickViewModal';
+ 
+ const Home: React.FC = () => {
+@@ -97,6 +106,9 @@ const Home: React.FC = () => {
+     const navigate = useNavigate();
+     const [categories, setCategories] = useState<any[]>([]);
+     const [featuredProducts, setFeaturedProducts] = useState<any[]>([]);
++    const [latestProducts, setLatestProducts] = useState<any[]>([]);
++    const [popularProducts, setPopularProducts] = useState<any[]>([]);
++    // @ts-ignore
+     const [comboOffers, setComboOffers] = useState<any[]>([]);
+     const [offerProductsData, setOfferProductsData] = useState<{ products: any[], maxPercent: number, maxAmount: number }>({ products: [], maxPercent: 0, maxAmount: 0 });
+     const [quickViewProduct, setQuickViewProduct] = useState<any | null>(null);
+@@ -108,7 +120,9 @@ const Home: React.FC = () => {
+                     userApiClient.get('/user/categories'),
+                     userApiClient.get('/user/products/featured'),
+                     userApiClient.get('/user/products/combo-offers'),
+-                    userApiClient.get('/user/products/offer-products')
++                    userApiClient.get('/user/products/offer-products'),
++                    userApiClient.get('/user/products/popular'),
++                    userApiClient.get('/user/products?sort=newest')
+                 ]);
+ 
+                 if (catRes.data.success) {
+@@ -151,6 +165,7 @@ const Home: React.FC = () => {
+         return badges;
+     };
+ 
++    // @ts-ignore
+     const handleCollectOffer = async (offer: any) => {
+         if (!offer.products || offer.products.length === 0) return;
+ 
+@@ -164,7 +179,7 @@ const Home: React.FC = () => {
+                 // Using sync endpoint to add multiple items at once
+                 const apiItems = cartItemsToAdd.map((i: any) => ({
+                     product: i.product._id,
+-                                        quantity: i.quantity
++                    quantity: i.quantity
+                 }));
+                 const res = await userApiClient.post('/user/cart/sync', { cartItems: apiItems });
+                 if (res.data.success) {
+@@ -239,7 +254,7 @@ const Home: React.FC = () => {
+                                             <div className="dz-content">
+                                                 <h5 className="dz-title">{featuredProducts[0]?.productName || 'Metavya'}</h5>
+                                                 <span className="price">
+-                                                    Γé╣{featuredProducts[0]?.offerPrice?.toFixed(2) || featuredProducts[0]?.price?.toFixed(2) || '18.00'} 
++                                                    Γé╣{featuredProducts[0]?.offerPrice?.toFixed(2) || featuredProducts[0]?.price?.toFixed(2) || '18.00'}
+                                                     {featuredProducts[0]?.offerPrice && featuredProducts[0]?.offerPrice < featuredProducts[0]?.price && (
+                                                         <del className="ms-1">Γé╣{featuredProducts[0]?.price?.toFixed(2)}</del>
+                                                     )}
+@@ -255,7 +270,7 @@ const Home: React.FC = () => {
+                                             <div className="dz-content">
+                                                 <h5 className="dz-title">{featuredProducts[1]?.productName || 'Femroot'}</h5>
+                                                 <span className="price">
+-                                                    Γé╣{featuredProducts[1]?.offerPrice?.toFixed(2) || featuredProducts[1]?.price?.toFixed(2) || '18.00'} 
++                                                    Γé╣{featuredProducts[1]?.offerPrice?.toFixed(2) || featuredProducts[1]?.price?.toFixed(2) || '18.00'}
+                                                     {featuredProducts[1]?.offerPrice && featuredProducts[1]?.offerPrice < featuredProducts[1]?.price && (
+                                                         <del className="ms-1">Γé╣{featuredProducts[1]?.price?.toFixed(2)}</del>
+                                                     )}
+@@ -395,7 +410,7 @@ const Home: React.FC = () => {
+                         <div className="col-lg-8 col-md-12 m-b30">
+                             <div className="about-wraper">
+                                 <div className="section-head style-1 mb-2 fadeInUp" data-wow-delay="0.1s">
+-                                    <h2 className="title">More Collections</h2>
++                                    <h2 className="title">Explore Our Collections</h2>
+                                     <Link to="/shop" className="arrow-btn">
+                                         <svg xmlns="http://www.w3.org/2000/svg" width="44" height="44" viewBox="0 0 44 44" fill="none">
+                                             <path d="M12.8335 31.1667L31.1668 12.8333" stroke="black" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+@@ -436,46 +451,18 @@ const Home: React.FC = () => {
+                                         },
+                                     }}
+                                 >
+-                                    <SwiperSlide>
+-                                        <div className="about-box">
+-                                            <div className="about-img">
+-                                                <img src={about2} alt="" />
+-                                            </div>
+-                                            <div className="about-btn">
+-                                                <Link to="/shop" className="btn btn-light btn-md">Essential Items</Link>
+-                                            </div>
+-                                        </div>
+-                                    </SwiperSlide>
+-                                    <SwiperSlide>
+-                                        <div className="about-box">
+-                                            <div className="about-img">
+-                                                <img src={about3} alt="" />
+-                                            </div>
+-                                            <div className="about-btn">
+-                                                <Link to="/shop" className="btn btn-light btn-md">Repair Serum</Link>
+-                                            </div>
+-                                        </div>
+-                                    </SwiperSlide>
+-                                    <SwiperSlide>
+-                                        <div className="about-box">
+-                                            <div className="about-img">
+-                                                <img src={about4} alt="" />
+-                                            </div>
+-                                            <div className="about-btn">
+-                                                <Link to="/shop" className="btn btn-light btn-md">Anti Aging Cream</Link>
+-                                            </div>
+-                                        </div>
+-                                    </SwiperSlide>
+-                                    <SwiperSlide>
+-                                        <div className="about-box">
+-                                            <div className="about-img">
+-                                                <img src={about4} alt="" />
+-                                            </div>
+-                                            <div className="about-btn">
+-                                                <Link to="/shop" className="btn btn-light btn-md">Anti Aging Cream</Link>
++                                    {popularProducts.slice(0, 4).map((prod, idx) => (
++                                        <SwiperSlide key={idx}>
++                                            <div className="about-box">
++                                                <div className="about-img">
++                                                    <img src={prod.images && prod.images.length > 0 ? prod.images[0] : ''} alt="image" style={{ width: '100%', aspectRatio: '3/4', objectFit: 'cover' }} />
++                                                </div>
++                                                <div className="about-btn">
++                                                    <Link to={`/product/${prod._id}`} className="btn btn-light btn-md">{prod.productName && prod.productName.length > 20 ? prod.productName.substring(0, 20) + '...' : prod.productName}</Link>
++                                                </div>
+                                             </div>
+-                                        </div>
+-                                    </SwiperSlide>
++                                        </SwiperSlide>
++                                    ))}
+                                 </Swiper>
+                                 <div className="testimonial-pagination d-flex justify-content-between align-items-center">
+                                     <div className="d-flex gap-3">
+@@ -541,7 +528,7 @@ const Home: React.FC = () => {
+                                         <div className="dz-media media-overlay">
+                                             <img src={prod.images && prod.images.length > 0 ? prod.images[0] : product1} alt="image" />
+                                             <div className="shop-meta">
+-                                                <button 
++                                                <button
+                                                     onClick={(e) => { e.preventDefault(); setQuickViewProduct(prod); }}
+                                                     className="btn btn-secondary btn-icon"
+                                                 >
+@@ -645,7 +632,7 @@ const Home: React.FC = () => {
+                                 <div className="col-lg-8 col-md-8 col-sm-12">
+                                     <div className="section-head style-1 mb-3 wow fadeInUp" data-wow-delay="0.4s">
+                                         <div className="left-content">
+-                                            <h2 className="title">Similar Profiles</h2>
++                                            <h2 className="title">Recommended Products</h2>
+                                         </div>
+                                     </div>
+                                 </div>
+@@ -676,22 +663,22 @@ const Home: React.FC = () => {
+                                 </div>
+                             </div>
+                             <div className="row">
+-                                {[
+-                                    { img: cosmeticMed1, title: 'Moisturizing Body Lotion', price: 'Γé╣80', oldPrice: 'Γé╣95', sale: 'Up to 40% Off' },
+-                                    { img: cosmeticMed2, title: 'Rejuvenating Body Oil', price: 'Γé╣80', oldPrice: 'Γé╣95', sale: 'Up to 40% Off' },
+-                                    { img: cosmeticMed3, title: 'Cleansing Body Wash', price: 'Γé╣80', oldPrice: 'Γé╣95', sale: 'Up to 40% Off' }
+-                                ].map((prod, idx) => (
++                                {latestProducts.map((prod, idx) => (
+                                     <div key={idx} className="col-lg-4 col-md-4 col-sm-6 m-b30">
+                                         <div className="shop-card style-2 wow fadeInUp" data-wow-delay={`${1.2 + idx * 0.2}s`}>
+                                             <div className="dz-media">
+-                                                <img src={prod.img} alt="image" />
++                                                <img src={prod.images && prod.images.length > 0 ? prod.images[0] : ''} alt="" />
+                                             </div>
+                                             <div className="dz-content">
+                                                 <div>
+-                                                    <span className="sale-title">{prod.sale}</span>
+-                                                    <h6 className="title"><Link to="/shop">{prod.title}</Link></h6>
++                                                    <h6 className="title"><Link to={`/product/${prod._id}`}>{prod.productName}</Link></h6>
+                                                 </div>
+-                                                <h6 className="price">{prod.price} <del>{prod.oldPrice}</del></h6>
++                                                <h6 className="price">
++                                                    Γé╣{prod.offerPrice || prod.price}
++                                                    {prod.offerPrice && prod.offerPrice < prod.price && (
++                                                        <del className="ms-1">Γé╣{prod.price}</del>
++                                                    )}
++                                                </h6>
+                                             </div>
+                                         </div>
+                                     </div>
+@@ -736,12 +723,12 @@ const Home: React.FC = () => {
+                                     { img: product1, productName: 'Metavya', price: 95, offerPrice: 50, appliedOffer: { discountValue: 40, discountType: 'percentage' } },
+                                     { img: product2, productName: 'Femroot', price: 95, offerPrice: 40, appliedOffer: { discountValue: 40, discountType: 'percentage' } }
+                                 ]).map((prod, idx) => {
+-                                    const discountLabel = prod.appliedOffer 
+-                                        ? (prod.appliedOffer.discountType === 'percentage' 
+-                                            ? `Up To ${prod.appliedOffer.discountValue}% Off` 
++                                    const discountLabel = prod.appliedOffer
++                                        ? (prod.appliedOffer.discountType === 'percentage'
++                                            ? `Up To ${prod.appliedOffer.discountValue}% Off`
+                                             : `Γé╣${prod.appliedOffer.discountValue} Off`)
+                                         : 'Up To 40% Off';
+-                                    
++
+                                     return (
+                                         <div key={idx} className="col-lg-6 col-md-6 col-sm-6">
+                                             <div className="shop-card style-3 wow fadeInUp" data-wow-delay={`${0.2 + idx * 0.1}s`}>
+@@ -761,7 +748,7 @@ const Home: React.FC = () => {
+                                                 </div>
+                                                 {prod.appliedOffer && prod.appliedOffer.discountType === 'percentage' && (
+                                                     <span className="sale-badge">
+-                                                        {prod.appliedOffer.discountValue}%<br />Sale 
++                                                        {prod.appliedOffer.discountValue}%<br />Sale
+                                                         <img src={starPng} alt="" />
+                                                     </span>
+                                                 )}
+@@ -857,7 +844,7 @@ const Home: React.FC = () => {
+                                     <div className="col-xl-8 col-lg-12 col-md-12 custom-width">
+                                         <div className="section-head style-1 mb-3 fadeInUp" data-wow-delay="0.1s">
+                                             <div className="left-content">
+-                                                <h2 className="title mb-3">Hot Spots</h2>
++                                                <h2 className="title mb-3">Latest Products</h2>
+                                                 <p>Up To 60% Off + Up To Γé╣107 Cashback</p>
+                                             </div>
+                                             <Link to="/shop" className="btn btn-outline-secondary align-self-end mb-4 text-nowrap">View All</Link>
+@@ -914,6 +901,8 @@ const Home: React.FC = () => {
+             </section >
+ 
+             {/* Deals-Section Start */}
++            {/* Blockbuster deals hidden as requested by user */}
++            {/* 
+             < section className="content-inner-2 bg-light overflow-hidden" >
+                 <div className="container">
+                     <div className="section-head style-1 fadeInUp" data-wow-delay="0.2s">
+@@ -957,10 +946,6 @@ const Home: React.FC = () => {
+                                         <img src={item.img} alt="image" />
+                                     </div>
+                                     <div className="dz-content">
+-                                        <div>
+-                                            <span className="sale-title">up to 79% off</span>
+-                                            <h5 className="title"><Link to="/shop">{item.title}</Link></h5>
+-                                        </div>
+                                         <h6 className="price">{item.price} <del>{item.old}</del></h6>
+                                     </div>
+                                 </div>
+@@ -969,9 +954,12 @@ const Home: React.FC = () => {
+                     </Swiper>
+                 </div>
+             </section >
++            */}
+             {/* Deals-Section End */}
+ 
+             {/* Featured-Section Start */}
++            {/* Featured Combo hidden as requested */}
++            {/* 
+             <section className="content-inner-2 bg-light">
+                 <div className="container">
+                     <div className="section-head style-1 mb-2 wow fadeInUp" data-wow-delay="0.2s">
+@@ -1045,7 +1033,7 @@ const Home: React.FC = () => {
+                 <div className="container">
+                     <div className="section-head style-1 mb-3 fadeInUp" data-wow-delay="0.2s">
+                         <div className="left-content">
+-                            <h2 className="title">Featured now</h2>
++                            <h2 className="title">Featured Products</h2>
+                         </div>
+                         <Link to="/shop" className="btn btn-outline-secondary">View All</Link>
+                     </div>
+@@ -1065,25 +1053,23 @@ const Home: React.FC = () => {
+                             },
+                         }}
+                     >
+-                        {[
+-                            { img: cosmeticMed1, title: 'Clear Complexion Cleansing Foam' },
+-                            { img: cosmeticMed2, title: 'Floral Burst Fragrance Mist' },
+-                            { img: cosmeticMed3, title: 'Aqua-Fresh Moisturizing Gel' },
+-                            { img: cosmeticMed4, title: 'Divine Essence Perfume Elixir' }
+-                        ].map((item, idx) => (
++                        {featuredProducts.map((prod, idx) => (
+                             <SwiperSlide key={idx}>
+                                 <div className="shop-card style-5 wow fadeInUp" data-wow-delay={`${0.4 + idx * 0.2}s`}>
+                                     <div className="dz-media">
+-                                        <img src={item.img} alt="image" />
++                                        <img src={prod.images && prod.images.length > 0 ? prod.images[0] : ''} alt="" />
+                                     </div>
+                                     <div className="dz-content">
+                                         <div>
+-                                            <h6 className="title"><Link to="/shop">{item.title}</Link></h6>
+-                                            <span className="sale-title">Up to 40% Off</span>
++                                            <h6 className="title"><Link to={`/product/${prod._id}`}>{prod.productName}</Link></h6>
+                                         </div>
+                                         <div className="d-flex align-items-center">
+-                                            <h6 className="price">Γé╣80<del>Γé╣95</del></h6>
+-                                            <span className="review"><i className="fa-solid fa-star"></i>(2k Review)</span>
++                                            <h6 className="price">
++                                                Γé╣{prod.offerPrice || prod.price}
++                                                {prod.offerPrice && prod.offerPrice < prod.price && (
++                                                    <del className="ms-1">Γé╣{prod.price}</del>
++                                                )}
++                                            </h6>
+                                         </div>
+                                     </div>
+                                 </div>
+@@ -1126,12 +1112,12 @@ const Home: React.FC = () => {
+                                     { img: product1, productName: 'Metavya', price: 95, offerPrice: 50, appliedOffer: { discountValue: 40, discountType: 'percentage' } },
+                                     { img: product2, productName: 'Femroot', price: 95, offerPrice: 40, appliedOffer: { discountValue: 40, discountType: 'percentage' } }
+                                 ]).map((prod, idx) => {
+-                                    const discountLabel = prod.appliedOffer 
+-                                        ? (prod.appliedOffer.discountType === 'percentage' 
+-                                            ? `Up To ${prod.appliedOffer.discountValue}% Off` 
++                                    const discountLabel = prod.appliedOffer
++                                        ? (prod.appliedOffer.discountType === 'percentage'
++                                            ? `Up To ${prod.appliedOffer.discountValue}% Off`
+                                             : `Γé╣${prod.appliedOffer.discountValue} Off`)
+                                         : 'Special Offer';
+-                                    
++
+                                     return (
+                                         <div key={idx} className="col-lg-6 col-md-6 col-sm-6">
+                                             <div className="shop-card style-3 wow fadeInUp" data-wow-delay={`${0.2 + idx * 0.1}s`}>
+@@ -1151,7 +1137,7 @@ const Home: React.FC = () => {
+                                                 </div>
+                                                 {prod.appliedOffer && prod.appliedOffer.discountType === 'percentage' && (
+                                                     <span className="sale-badge">
+-                                                        {prod.appliedOffer.discountValue}%<br />Sale 
++                                                        {prod.appliedOffer.discountValue}%<br />Sale
+                                                         <img src={starPng} alt="" />
+                                                     </span>
+                                                 )}
+@@ -1170,7 +1156,7 @@ const Home: React.FC = () => {
+             <section className="content-inner-2 bg-light">
+                 <div className="container">
+                     <div className="section-head style-1 mb-3 fadeInUp text-start" data-wow-delay="0.2s">
+-                        <h2 className="title">Sponsored</h2>
++                        <h2 className="title">Our Featured Products</h2>
+                         <Link to="/shop" className="btn btn-outline-secondary">View All</Link>
+                     </div>
+                     <Swiper
+@@ -1223,7 +1209,7 @@ const Home: React.FC = () => {
+             <section className="content-inner-1 bg-light">
+                 <div className="container">
+                     <div className="section-head style-1 mb-4 fadeInUp text-start" data-wow-delay="0.1s">
+-                        <h2 className="title">Latest Cosmetic News</h2>
++                        <h2 className="title">Fresh Arrivals</h2>
+                         <Link to="/shop" className="btn btn-outline-secondary">View All</Link>
+                     </div>
+                 </div>
+@@ -1293,7 +1279,7 @@ const Home: React.FC = () => {
+                 <div className="container">
+                     <div className="section-head style-1 d-block wow fadeInUp text-center" data-wow-delay="0.1s">
+                         <div className="max-w900 mx-auto">
+-                            <h2 className="title mb-4">Subscribe Newsletter & Get Cosmetic News</h2>
++                            <h2 className="title mb-4">Subscribe Newsletter & Get Organic News</h2>
+                         </div>
+                         <form className="dzSubscribe style-2">
+                             <div className="form-group">
+@@ -1316,7 +1302,7 @@ const Home: React.FC = () => {
+                         <div className="follow-link bg-white wow bounceIn" data-wow-delay="0.1s">
+                             <div className="follow-link-content">
+                                 <h4 className="title">On the Instagram</h4>
+-                                <p className="text">Follow @Naturalayam</p>
++                                <p className="text">Follow @NaturalEdibles</p>
+                             </div>
+                         </div>
+                     </a>
+@@ -1335,9 +1321,9 @@ const Home: React.FC = () => {
+             </div>
+ 
+             {/* Quick View Modal Container */}
+-            <QuickViewModal 
+-                product={quickViewProduct} 
+-                onClose={() => setQuickViewProduct(null)} 
++            <QuickViewModal
++                product={quickViewProduct}
++                onClose={() => setQuickViewProduct(null)}
+             />
+         </>
+     );

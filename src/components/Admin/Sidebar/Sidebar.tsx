@@ -24,6 +24,7 @@ import {
     Percent,
     Tags,
     Truck,
+    Stethoscope,
     // Zap,
     LogOut
 } from 'lucide-react';
@@ -37,7 +38,8 @@ interface SidebarProps {
 const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
     const [expandedMenus, setExpandedMenus] = useState<{ [key: string]: boolean }>({
         orders: true,
-        finance: true
+        finance: true,
+        consultations: false
     });
 
     const toggleMenu = (menu: string) => {
@@ -144,6 +146,27 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
                         <Users size={20} />
                         <span>Customers</span>
                     </NavLink>
+
+                    <div className={`nav-group ${expandedMenus.consultations ? 'expanded' : ''}`}>
+                        <div className="nav-item-toggle" onClick={() => toggleMenu('consultations')}>
+                            <div className="nav-item-left">
+                                <Stethoscope size={20} />
+                                <span>Consultations</span>
+                            </div>
+                            <ChevronDown size={14} className="group-arrow" />
+                        </div>
+
+                        <div className="sub-menu">
+                            <NavLink to="/admin/consultations" end className={({ isActive }) => isActive ? 'sub-nav-item active' : 'sub-nav-item'}>
+                                <ClipboardList size={18} />
+                                <span>Bookings</span>
+                            </NavLink>
+                            <NavLink to="/admin/consultations/settings" className={({ isActive }) => isActive ? 'sub-nav-item active' : 'sub-nav-item'}>
+                                <Settings size={18} />
+                                <span>Settings</span>
+                            </NavLink>
+                        </div>
+                    </div>
 
                     <NavLink to="/admin/products" className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'}>
                         <Package size={20} />

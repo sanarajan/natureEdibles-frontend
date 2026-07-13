@@ -14,6 +14,7 @@ const ManualPayment: React.FC = () => {
     const [settings, setSettings] = useState<any>(null);
     const [paymentReferenceId, setPaymentReferenceId] = useState('');
     const [loading, setLoading] = useState(false);
+    const [fetchingSettings, setFetchingSettings] = useState(true);
 
     useEffect(() => {
         if (!checkoutState) {
@@ -29,12 +30,11 @@ const ManualPayment: React.FC = () => {
             const response = await userApiClient.get('/user/payment-settings');
             if (response.data.success && response.data.settings) {
                 setSettings(response.data.settings);
-            } else {
-                toast.error("Failed to load payment instructions.");
             }
         } catch (error: any) {
             console.error('Failed to fetch settings:', error);
-            toast.error("Failed to load payment details. Please contact support.");
+        } finally {
+            setFetchingSettings(false);
         }
     };
 
@@ -46,8 +46,8 @@ const ManualPayment: React.FC = () => {
     const handleDownloadQR = async () => {
         try {
             const qrUrl = checkoutState?.totalAmount 
-                ? `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(`upi://pay?pa=${settings.upiId === 'pending@upi' ? 'sanamol87@okaxis' : settings.upiId}&pn=Nature Edibles&am=${checkoutState.totalAmount}&cu=INR`)}` 
-                : (settings.qrCodeImage.includes('placeholder') ? '/images/qrcode.jpeg' : settings.qrCodeImage);
+                ? `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(`upi://pay?pa=${settings.upiId}&pn=Nature Edibles&am=${checkoutState.totalAmount}&cu=INR`)}` 
+                : settings.qrCodeImage;
 
             const response = await fetch(qrUrl);
             const blob = await response.blob();
@@ -94,6 +94,7 @@ const ManualPayment: React.FC = () => {
                 ...checkoutState,
                 paymentMethod: 'Manual UPI',
                 paymentReferenceId: trimmedRef,
+                paymentAccountId: settings?._id,
                 isOnline: false // To ensure Razorpay is not triggered
             };
 
@@ -111,7 +112,26 @@ const ManualPayment: React.FC = () => {
         }
     };
 
-    if (!settings) return <div className="text-center p-5"><div className="spinner-border text-primary" role="status"></div><p className="mt-2">Loading secure payment portal...</p></div>;
+    if (fetchingSettings) return <div className="text-center p-5"><div className="spinner-border text-primary" role="status"></div><p className="mt-2">Loading secure payment portal...</p></div>;
+
+    if (!settings) return (
+        <div className="page-content bg-light" style={{ minHeight: '80vh', display: 'flex', alignItems: 'center', padding: '40px 0' }}>
+            <div className="container">
+                <div className="row justify-content-center">
+                    <div className="col-lg-8 col-md-10 text-center">
+                        <div className="card shadow-lg border-0 p-5" style={{ borderRadius: '20px' }}>
+                            <i className="fas fa-exclamation-circle text-muted mb-3" style={{ fontSize: '3rem' }}></i>
+                            <h4 className="fw-bold text-dark">Payment Method Unavailable</h4>
+                            <p className="text-muted fs-5 mt-2">No payment method is currently available.<br/>Please contact the administrator.</p>
+                            <button onClick={() => navigate('/checkout')} className="btn btn-primary mt-4 px-4 py-2 rounded-pill shadow-sm">
+                                Return to Checkout
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
 
     return (
         <div className="page-content bg-light" style={{ minHeight: '80vh', display: 'flex', alignItems: 'center', padding: '40px 0' }}>
@@ -142,7 +162,7 @@ const ManualPayment: React.FC = () => {
                                     <div className="col-md-5 text-center mb-4 mb-md-0 border-end border-light d-flex flex-column align-items-center">
                                         <div className="p-3 bg-white shadow-sm rounded-4 mb-3 d-inline-block" style={{ border: '2px dashed #ddd' }}>
                                             <img 
-                                                src={checkoutState?.totalAmount ? `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(`upi://pay?pa=${settings.upiId === 'pending@upi' ? 'sanamol87@okaxis' : settings.upiId}&pn=Nature Edibles&am=${checkoutState.totalAmount}&cu=INR`)}` : (settings.qrCodeImage.includes('placeholder') ? '/images/qrcode.jpeg' : settings.qrCodeImage)} 
+                                                src={checkoutState?.totalAmount ? `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(`upi://pay?pa=${settings.upiId}&pn=Nature Edibles&am=${checkoutState.totalAmount}&cu=INR`)}` : settings.qrCodeImage} 
                                                 alt="UPI QR Code" 
                                                 style={{ width: '200px', height: '200px', objectFit: 'contain' }} 
                                             />
@@ -167,9 +187,9 @@ const ManualPayment: React.FC = () => {
                                             <label className="text-muted small text-uppercase fw-bold mb-1">Business UPI ID</label>
                                             <div className="d-flex align-items-center p-3 bg-light rounded-3 border">
                                                 <span className="fs-5 fw-bold text-dark flex-grow-1">
-                                                    {settings.upiId === 'pending@upi' ? 'sanamol87@okaxis' : settings.upiId}
+                                                    {settings.upiId}
                                                 </span>
-                                                <button onClick={() => handleCopy(settings.upiId === 'pending@upi' ? 'sanamol87@okaxis' : settings.upiId, 'UPI ID')} className="btn btn-light btn-sm text-secondary rounded-circle shadow-sm" title="Copy UPI ID">
+                                                <button onClick={() => handleCopy(settings.upiId, 'UPI ID')} className="btn btn-light btn-sm text-secondary rounded-circle shadow-sm" title="Copy UPI ID">
                                                     <Copy size={16} />
                                                 </button>
                                             </div>
@@ -179,9 +199,9 @@ const ManualPayment: React.FC = () => {
                                             <label className="text-muted small text-uppercase fw-bold mb-1">Support Phone Number</label>
                                             <div className="d-flex align-items-center p-3 bg-light rounded-3 border">
                                                 <span className="fs-5 fw-bold text-dark flex-grow-1">
-                                                    {settings.phoneNumber === '0000000000' ? 'Not provided' : settings.phoneNumber}
+                                                    {settings.phoneNumber}
                                                 </span>
-                                                <button onClick={() => handleCopy(settings.phoneNumber === '0000000000' ? 'Not provided' : settings.phoneNumber, 'Phone Number')} className="btn btn-light btn-sm text-secondary rounded-circle shadow-sm" title="Copy Phone Number">
+                                                <button onClick={() => handleCopy(settings.phoneNumber, 'Phone Number')} className="btn btn-light btn-sm text-secondary rounded-circle shadow-sm" title="Copy Phone Number">
                                                     <Copy size={16} />
                                                 </button>
                                             </div>

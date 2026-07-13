@@ -1,0 +1,149 @@
+/* ─── Layout Reset ─────────────────────────────────────────── */
+.consultation-page-body {
+  font-size: 15px;
+  zoom: 0.9;
+  /* Uniform zoom-out to match original HTML visual scale */
+}
+
+/* ─── Global Left/Right Padding ────────────────────────────── */
+/* Original style.css sets 80px for >1280px but falls to 15px below that.
+   These overrides give proper breathing room at ALL screen sizes. */
+.consultation-page-body .container-fluid,
+.consultation-page-body .container-sm,
+.consultation-page-body .container-md,
+.consultation-page-body .container-lg,
+.consultation-page-body .container-xl {
+  padding-left: 25px !important;
+  padding-right: 25px !important;
+}
+
+@media only screen and (min-width: 768px) {
+  .consultation-page-body .container-fluid,
+  .consultation-page-body .container-sm,
+  .consultation-page-body .container-md,
+  .consultation-page-body .container-lg,
+  .consultation-page-body .container-xl {
+    padding-left: 45px !important;
+    padding-right: 45px !important;
+  }
+}
+
+@media only screen and (min-width: 1281px) {
+  .consultation-page-body .container-fluid,
+  .consultation-page-body .container-sm,
+  .consultation-page-body .container-md,
+  .consultation-page-body .container-lg,
+  .consultation-page-body .container-xl {
+    padding-left: 80px !important;
+    padding-right: 80px !important;
+  }
+}
+
+/* ─── Header Nav Links ──────────────────────────────────────── */
+/* zoom:0.9 on site-header: set values ~11% higher to land on HTML's rendered size */
+.consultation-page-body .header-nav .nav>li>a {
+  font-size: 18px !important;
+  padding: 28px 26px !important;
+  font-family: 'Lufga', sans-serif !important;
+  font-weight: 400 !important;
+  line-height: 24px !important;
+}
+
+@media only screen and (max-width: 1480px) {
+  .consultation-page-body .header-nav .nav>li>a {
+    padding-left: 17px !important;
+    padding-right: 17px !important;
+  }
+}
+
+@media only screen and (max-width: 1199px) {
+  .consultation-page-body .header-nav .nav>li>a {
+    padding-left: 8px !important;
+    padding-right: 8px !important;
+    font-size: 16px !important;
+  }
+}
+
+/* ─── Logo ──────────────────────────────────────────────────── */
+.consultation-page-body .logo-header img {
+  height: 45px;
+  /* zoom:0.9 on header scales this to ~40px rendered */
+  width: auto;
+}
+
+/* ─── Header Zoom ───────────────────────────────────────────── */
+/* Fixed/absolute elements can escape parent zoom — apply directly */
+.consultation-page-body .site-header {
+  zoom: 0.9;
+}
+
+/* ─── Extra Nav Height ──────────────────────────────────────── */
+.consultation-page-body .site-header .extra-nav {
+  height: 80px !important;
+}
+
+/* ─── Login / Register link styling ─────────────────────────── */
+.consultation-page-body .site-header .extra-nav .extra-cell .login-link a {
+  color: var(--title, #2D2E2F) !important;
+  font-size: 16px !important;
+  font-weight: 400 !important;
+  margin-right: 35px !important;
+  text-transform: capitalize !important;
+  font-family: 'Marcellus', serif !important;
+  white-space: nowrap;
+}
+
+@media only screen and (max-width: 1480px) {
+  .consultation-page-body .site-header .extra-nav .extra-cell .login-link {
+    display: none !important;
+  }
+}
+
+@media only screen and (max-width: 767px) {
+  .consultation-page-body .site-header .extra-nav .extra-cell .login-link {
+    display: block !important;
+  }
+}
+
+/* ─── Navicon (Burger Menu) ─────────────────────────────────── */
+.consultation-page-body .navicon {
+  width: 38px !important;
+  height: 38px !important;
+}
+
+.consultation-page-body .navicon span {
+  left: 8px !important;
+}
+
+.consultation-page-body .navicon span:nth-child(1) {
+  top: 11px !important;
+  width: 19px !important;
+}
+
+.consultation-page-body .navicon span:nth-child(2) {
+  top: 19px !important;
+  width: 22px !important;
+}
+
+.consultation-page-body .navicon span:nth-child(3) {
+  top: 27px !important;
+  width: 19px !important;
+}
+
+.consultation-page-body .navicon.open span:nth-child(1) {
+  width: 22px !important;
+}
+
+.consultation-page-body .navicon.open span:nth-child(3) {
+  width: 22px !important;
+}
+
+.btnconsult{
+  element.style {
+    height: 40px;
+    background-color: black;
+    width: 200px;
+    border-radius: 8px;
+}
+}
+

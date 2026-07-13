@@ -171,6 +171,7 @@ const Shop: React.FC = () => {
     const [priceMin, setPriceMin] = useState(0);
     const [priceMax, setPriceMax] = useState(2000);
     const [quickViewProduct, setQuickViewProduct] = useState<Product | null>(null);
+    const [isFilterActive, setIsFilterActive] = useState(false);
 
     const [products, setProducts] = useState<Product[]>([]);
     const [hierarchies, setHierarchies] = useState<any[]>([]);
@@ -442,12 +443,18 @@ const Shop: React.FC = () => {
             <section className="content-inner-1 pt-3 z-index-unset bg-light">
                 <div className="container-fluid">
                     <div className="row">
-                        <div className="col-12 col-xl-3">
+                        <div className={`col-xl-3 ${isFilterActive ? 'col-12 col-lg-3' : 'd-none d-xl-block'}`}>
                             <div className="sticky-xl-top">
-                                <div className="shop-filter mt-xl-2 mt-0">
+                                <div className={`panel-close-btn ${isFilterActive ? 'active' : ''}`} onClick={() => setIsFilterActive(false)}>
+                                    <i className="fa-solid fa-xmark text-white" style={{ fontSize: '20px' }}></i>
+                                </div>
+                                <div className={`shop-filter mt-xl-2 mt-0 ${isFilterActive ? 'active' : ''}`}>
                                     <aside>
                                         <div className="d-flex align-items-center justify-content-between m-b30">
                                             <h6 className="title mb-0 fw-normal d-flex">Filters</h6>
+                                            <button className="btn btn-sm btn-outline-secondary d-xl-none" onClick={() => setIsFilterActive(false)} style={{ border: 'none', background: 'none' }}>
+                                                <i className="fa-solid fa-xmark" style={{ fontSize: '18px' }}></i>
+                                            </button>
                                         </div>
 
                                         <div className="widget widget_search">
@@ -474,8 +481,9 @@ const Shop: React.FC = () => {
                                                     <div className="custom-control custom-checkbox d-flex align-items-center"
                                                         onClick={() => setOnOffer(!onOffer)}
                                                         style={{ cursor: 'pointer', marginBottom: '8px' }}>
-                                                        <div className={`form-check-input square ${onOffer ? 'checked' : ''}`}
-                                                            style={{ width: '16px', height: '16px', border: '1px solid #ccc', marginRight: '10px', backgroundColor: onOffer ? '#38996E' : 'transparent' }}></div>
+                                                        <input type="checkbox" className="form-check-input square"
+                                                            checked={onOffer} readOnly
+                                                            style={{ width: '16px', height: '16px', border: '1px solid #ccc', marginRight: '10px', cursor: 'pointer' }} />
                                                         <span style={{ fontSize: '14px', color: onOffer ? '#38996E' : '#555', fontWeight: onOffer ? 600 : 400 }}>On Offers</span>
                                                     </div>
                                                 </li>
@@ -535,8 +543,9 @@ const Shop: React.FC = () => {
                                                                 <div className="custom-control custom-checkbox d-flex align-items-center"
                                                                     onClick={() => handleCategoryToggle(cat._id, cat.subcategories)}
                                                                     style={{ cursor: 'pointer', flex: 1 }}>
-                                                                    <div className={`form-check-input square ${isCatSelected ? 'checked' : ''}`}
-                                                                        style={{ width: '16px', height: '16px', border: '1px solid #ccc', marginRight: '10px', backgroundColor: isCatSelected ? '#38996E' : 'transparent' }}></div>
+                                                                    <input type="checkbox" className="form-check-input square"
+                                                                        checked={isCatSelected} readOnly
+                                                                        style={{ width: '16px', height: '16px', border: '1px solid #ccc', marginRight: '10px', cursor: 'pointer' }} />
                                                                     <label className={`form-check-label text-start ${isCatSelected ? 'fw-bold text-primary' : ''}`} style={{ cursor: 'pointer', margin: 0 }}>{cat.categoryName}</label>
                                                                 </div>
                                                                 {cat.subcategories.length > 0 && (
@@ -556,8 +565,9 @@ const Shop: React.FC = () => {
                                                                                 <div className="custom-control custom-checkbox d-flex align-items-center"
                                                                                     onClick={(e) => { e.stopPropagation(); handleSubcategoryToggle(sub._id, cat._id, subIds); }}
                                                                                     style={{ cursor: 'pointer' }}>
-                                                                                    <div className={`form-check-input square ${isSubSelected ? 'checked' : ''}`}
-                                                                                        style={{ width: '14px', height: '14px', border: '1px solid #ccc', marginRight: '8px', borderRadius: '50%', backgroundColor: isSubSelected ? '#38996E' : 'transparent' }}></div>
+                                                                                    <input type="checkbox" className="form-check-input square"
+                                                                                        checked={isSubSelected} readOnly
+                                                                                        style={{ width: '14px', height: '14px', border: '1px solid #ccc', marginRight: '8px', cursor: 'pointer' }} />
                                                                                     <span style={{ fontSize: '13px', color: isSubSelected ? '#38996E' : '#666', fontWeight: isSubSelected ? 600 : 400 }}>{sub.subcategoryName}</span>
                                                                                 </div>
                                                                             </li>
@@ -577,9 +587,12 @@ const Shop: React.FC = () => {
                             </div>
                         </div>
 
-                        <div className="col-12 col-xl-9">
+                        <div className={`col-12 col-xl-9 ${isFilterActive ? 'col-lg-9' : ''}`}>
                             <div className="filter-wrapper">
                                 <div className="filter-left-area">
+                                    <div className="panel-btn d-xl-none" onClick={() => setIsFilterActive(true)}>
+                                        <i className="fa-solid fa-filter" style={{ fontSize: '18px', marginRight: '8px' }}></i> Filter
+                                    </div>
                                     <span>Showing 1–{products.length} Results</span>
                                 </div>
                                 <div className="filter-right-area">

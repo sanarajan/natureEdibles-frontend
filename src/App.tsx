@@ -10,6 +10,8 @@ import AdminOrders from './pages/Admin/Orders/AdminOrders'
 import AdminOrderDetails from './pages/Admin/Orders/AdminOrderDetails'
 import AdminCoupons from './pages/Admin/Coupons/AdminCoupons'
 import AddCoupon from './pages/Admin/Coupons/AddCoupon'
+import AdminConsultations from './pages/Admin/Consultations/AdminConsultations'
+import AdminConsultationSettings from './pages/Admin/Consultations/AdminConsultationSettings'
 import AgencyList from './pages/Admin/ShippingAgencies/AgencyList'
 import AgencyForm from './pages/Admin/ShippingAgencies/AgencyForm'
 import ShippingCharges from './pages/Admin/ShippingCharges/ShippingCharges'
@@ -42,6 +44,9 @@ import Address from './pages/Account/Address'
 import ShippingAddress from './pages/Account/ShippingAddress'
 import Orders from './pages/Account/Orders'
 import OrderDetails from './pages/Account/OrderDetails'
+import ConsultationBooking from './pages/User/Consultation/ConsultationBooking'
+import UserConsultationHistory from './pages/User/Consultation/UserConsultationHistory'
+import DietDashboard from './pages/User/Consultation/DietDashboard'
 import AdminLogin from './pages/Admin/AdminLogin'
 
 import { Routes, Route, useLocation } from 'react-router-dom'
@@ -136,6 +141,8 @@ function App() {
           <Route path="/admin/orders/:id" element={<AdminOrderDetails />} />
           <Route path="/admin/orders/completed" element={<AdminOrders />} />
 
+          <Route path="/admin/consultations" element={<AdminConsultations />} />
+          <Route path="/admin/consultations/settings" element={<AdminConsultationSettings />} />
 
           <Route path="/admin/finance/billing" element={<div className="p-4">Finance Billing (Coming Soon)</div>} />
           <Route path="/admin/finance/invoices" element={<div className="p-4">Finance Invoices (Coming Soon)</div>} />
@@ -234,9 +241,24 @@ function App() {
                       <OrderDetails />
                     </ProtectedRoute>
                   } />
+                  <Route path="/account/consultations" element={
+                    <ProtectedRoute type="user">
+                      <UserConsultationHistory />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/account/diet-dashboard" element={
+                    <ProtectedRoute type="user">
+                      <DietDashboard />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/consultation-booking" element={
+                    <ProtectedRoute type="user">
+                      <ConsultationBooking />
+                    </ProtectedRoute>
+                  } />
                 </Routes>
               </div>
-              <Footer />
+              {pathname !== '/consultation-booking' && <Footer />}
             </>
           }
         />
