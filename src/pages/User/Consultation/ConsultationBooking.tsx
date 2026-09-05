@@ -786,7 +786,7 @@ const ConsultationBooking: React.FC = () => {
                                                         <div className="consultation-medical-upload-list">
                                                             {Array.from({ length: visibleUploadRows }).map((_, i) => (
                                                                 <div key={i} className="consultation-medical-upload-row">
-                                                                    <label htmlFor={`medical-report-${i}`} className="consultation-medical-upload-button">
+                                                                    <label htmlFor={`medical-report-${i}`} className="consultation-medical-choose-button">
                                                                         <Upload size={18} />
                                                                         <span>Choose File</span>
                                                                     </label>
@@ -1065,7 +1065,7 @@ const ConsultationBooking: React.FC = () => {
                                                 </div>
                                                  {/* Important Note */}
                                                 <div className="relative p-4 mb-[28px] text-[#664d03] bg-[#fff3cd] border border-[#ffecb5] rounded-[0.375rem]">
-                                                    <strong>🌿 Important Note:</strong> I am not a medical doctor. I am a natural healing practitioner with 18 years of experience. My diet guidance is based on food correction and natural body healing principles. This is not a replacement for medical treatment.
+                                                    <strong>ðŸŒ¿ Important Note:</strong> I am not a medical doctor. I am a natural healing practitioner with 18 years of experience. My diet guidance is based on food correction and natural body healing principles. This is not a replacement for medical treatment.
                                                 </div>
                                                 </div>
                                                 </div>

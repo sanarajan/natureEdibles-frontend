@@ -1,0 +1,37 @@
+[33m401cd95[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m refs/remotes/origin/main@{Sat Sep 5 11:04:59 2026}: update by push
+[33m401cd95[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m refs/heads/main@{Sat Sep 5 11:04:46 2026}: commit: Update consultation booking and account consultation UI
+[33m401cd95[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m HEAD@{Sat Sep 5 11:04:46 2026}: commit: Update consultation booking and account consultation UI
+[33m7ed5384[m HEAD@{Sat Sep 5 11:00:33 2026}: 
+[33m7ed5384[m refs/remotes/origin/main@{Mon Jul 13 15:41:36 2026}: update by push
+[33m7ed5384[m refs/heads/main@{Mon Jul 13 15:41:28 2026}: commit: lpop complind nd efore repir
+[33m7ed5384[m HEAD@{Mon Jul 13 15:41:28 2026}: commit: lpop complind nd efore repir
+[33mec43948[m HEAD@{Mon Jun 29 19:55:21 2026}: checkout: moving from 6326ee34ca042326bbcc01d6675b47fa11b3826b to main
+[33m6326ee3[m HEAD@{Mon Jun 29 19:54:25 2026}: checkout: moving from main to 6326ee3
+[33mec43948[m HEAD@{Mon Jun 29 19:54:17 2026}: reset: moving to HEAD
+[33mec43948[m refs/remotes/origin/HEAD@{Mon Jun 29 15:40:42 2026}: remote set-head
+[33mec43948[m refs/remotes/origin/main@{Sun Jun 21 04:53:39 2026}: update by push
+[33mec43948[m refs/heads/main@{Sun Jun 21 04:53:32 2026}: commit: after changed products images and bug fix
+[33mec43948[m HEAD@{Sun Jun 21 04:53:32 2026}: commit: after changed products images and bug fix
+[33m6326ee3[m refs/remotes/origin/main@{Sun Jun 21 04:35:38 2026}: update by push
+[33m6326ee3[m refs/heads/main@{Sun Jun 21 04:35:28 2026}: commit: after changed products images partially
+[33m6326ee3[m HEAD@{Sun Jun 21 04:35:28 2026}: commit: after changed products images partially
+[33m31ca66e[m refs/remotes/origin/main@{Sun Jun 7 23:48:38 2026}: update by push
+[33m31ca66e[m refs/heads/main@{Sun Jun 7 23:48:27 2026}: commit: change cloudinary and payment id
+[33m31ca66e[m HEAD@{Sun Jun 7 23:48:27 2026}: commit: change cloudinary and payment id
+[33m41dfa56[m refs/remotes/origin/main@{Sat Jun 6 15:47:02 2026}: update by push
+[33m41dfa56[m refs/heads/main@{Sat Jun 6 15:46:56 2026}: commit: after domain se for backend
+[33m41dfa56[m HEAD@{Sat Jun 6 15:46:56 2026}: commit: after domain se for backend
+[33m8281020[m refs/remotes/origin/main@{Sat Jun 6 00:51:16 2026}: update by push
+[33m8281020[m refs/heads/main@{Sat Jun 6 00:51:08 2026}: commit: after change frontent url
+[33m8281020[m HEAD@{Sat Jun 6 00:51:08 2026}: commit: after change frontent url
+[33m52f46dc[m refs/remotes/origin/main@{Sat Jun 6 00:16:49 2026}: update by push
+[33m52f46dc[m refs/heads/main@{Sat Jun 6 00:16:40 2026}: commit: after change vercel url
+[33m52f46dc[m HEAD@{Sat Jun 6 00:16:40 2026}: commit: after change vercel url
+[33me8d3ca3[m refs/remotes/origin/main@{Fri Jun 5 17:40:00 2026}: update by push
+[33me8d3ca3[m refs/heads/main@{Fri Jun 5 17:39:50 2026}: commit: after change payment method
+[33me8d3ca3[m HEAD@{Fri Jun 5 17:39:50 2026}: commit: after change payment method
+[33mffb0147[m refs/remotes/origin/main@{Wed Jun 3 20:59:23 2026}: update by push
+[33mffb0147[m refs/heads/main@{Wed Jun 3 20:58:25 2026}: Branch: renamed refs/heads/master to refs/heads/main
+[33mffb0147[m HEAD@{Wed Jun 3 20:58:25 2026}: Branch: renamed refs/heads/master to refs/heads/main
+[33mffb0147[m refs/heads/main@{Wed Jun 3 20:58:08 2026}: commit (initial): all first
+[33mffb0147[m HEAD@{Wed Jun 3 20:58:08 2026}: commit (initial): all first
