@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { createConsultationBooking, getAvailableSlots, getUserConsultationSettings } from '../../../services/api/consultationApi';
 import userApiClient from '../../../services/userApiClient';
-import { Loader2, AlertCircle, Upload, Send } from 'lucide-react';
+import { Loader2, AlertCircle, Upload, Send, Plus } from 'lucide-react';
 import Select from 'react-select';
 import './ConsultationBooking.css';
 
@@ -20,6 +20,7 @@ const ConsultationBooking: React.FC = () => {
     
     const [isSuccess, setIsSuccess] = useState(false);
     const [medicalReports, setMedicalReports] = useState<File[]>([]);
+    const [visibleUploadRows, setVisibleUploadRows] = useState<number>(1);
     
     // Payment Settings State
     const [paymentSettings, setPaymentSettings] = useState<{_id?: string, qrCodeImage?: string, upiId?: string, phoneNumber?: string} | null>(null);
@@ -280,9 +281,14 @@ const ConsultationBooking: React.FC = () => {
         setErrors(prev => ({ ...prev, diagnosedCondition: validateField('diagnosedCondition', values, currentFormData) }));
     };
 
-    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (e.target.files) {
-            setMedicalReports(Array.from(e.target.files));
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, index: number = 0) => {
+        if (e.target.files && e.target.files.length > 0) {
+            const file = e.target.files[0];
+            setMedicalReports(prev => {
+                const newReports = [...prev];
+                newReports[index] = file;
+                return newReports;
+            });
         }
     };
 
@@ -478,20 +484,22 @@ const ConsultationBooking: React.FC = () => {
                     }
                     .consultation-page .section-card {
                         background-color: white;
-                        border-radius: 20px;
-                        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-                        padding: 32px;
-                        margin-bottom: 32px;
+                        border-radius: 16px;
+                        border: 1px solid #E8F5E9;
+                        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+                        padding: 24px;
+                        margin-bottom: 24px;
                         animation: heroFadeIn 0.6s ease-out forwards;
                     }
-                    @media (min-width: 768px) { .consultation-page .section-card { padding: 32px; } }
+                    @media (min-width: 768px) { .consultation-page .section-card { padding: 32px; margin-bottom: 32px; } }
                     .consultation-page .form-container {
                         background-color: #F3FAEB;
                         border-radius: 18px;
-                        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
-                        padding: 32px;
+                        border: 1px solid #E8F5E9;
+                        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.03);
+                        padding: 24px;
                     }
-                    @media (min-width: 768px) { .consultation-page .form-container { padding: 32px; } }
+                    @media (min-width: 768px) { .consultation-page .form-container { padding: 40px; } }
                     .consultation-page .custom-input, .consultation-page .custom-select {
                         height: 48px !important;
                         padding: 0 16px;
@@ -539,11 +547,16 @@ const ConsultationBooking: React.FC = () => {
                         border-color: #2B7A58;
                         background: #F3FAEB;
                     }
+                    .consultation-page .symptom-item:has(input:checked) {
+                        border-color: #2B7A58;
+                        background: #F3FAEB;
+                    }
                     .consultation-page .radio-group-horiz {
                         display: flex;
                         align-items: center;
-                        gap: 32px;
-                        height: 48px; /* align exactly with inputs */
+                        gap: 16px;
+                        min-height: 48px;
+                        flex-wrap: wrap;
                     }
                     .consultation-page .radio-label {
                         display: flex;
@@ -553,6 +566,19 @@ const ConsultationBooking: React.FC = () => {
                         font-size: 15px;
                         cursor: pointer;
                         margin-bottom: 0;
+                        padding: 8px 16px;
+                        border: 1px solid #eaeaea;
+                        border-radius: 8px;
+                        transition: all 0.2s;
+                        background: white;
+                    }
+                    .consultation-page .radio-label:hover {
+                        border-color: #38996E;
+                        background: #F3FAEB;
+                    }
+                    .consultation-page .radio-label:has(input:checked) {
+                        border-color: #38996E;
+                        background: #F3FAEB;
                     }
                     .consultation-page .validation-error-message {
                         color: #dc3545;
@@ -748,32 +774,45 @@ const ConsultationBooking: React.FC = () => {
                                                 </div>
                                                     <div className="col-12 form-group-mb">
                                                         <label className={labelClasses}>Do you have any medical reports? (HbA1c, Thyroid, Hormone Tests, Scan Reports, etc.)</label>
-                                                    <div className="mt-2 w-full border border-[#d9d9d9] rounded-[10px] p-6 flex flex-col md:flex-row items-center justify-between bg-white">
-                                                        <div className="flex items-center mb-[28px] md:mb-0">
-                                                            <div className="w-12 h-12 bg-gray-50 rounded-full flex items-center justify-center mr-4">
-                                                                <Upload className="w-6 h-6 text-gray-600" />
-                                                            </div>
-                                                            <div>
-                                                                <h4 className="font-semibold text-gray-800 text-[15px] mb-1">Upload Files</h4>
-                                                                <p className="text-gray-500 text-[13px]">Choose files or drag and drop</p>
-                                                            </div>
+                                                    <div className="mt-2 consultation-medical-upload-card">
+                                                        <div className="consultation-medical-upload-icon">
+                                                            <Upload size={28} />
                                                         </div>
-                                                        <label className="inline-flex items-center px-6 py-[10px] bg-white border border-[#38996E] text-[#38996E] rounded-[6px] cursor-pointer hover:bg-[#F3FAEB] transition-all duration-300 font-medium text-[14px]">
-                                                            Choose Files
-                                                            <input 
-                                                                type="file" 
-                                                                multiple 
-                                                                accept=".pdf,.jpg,.jpeg,.png" 
-                                                                onChange={handleFileChange} 
-                                                                className="hidden" 
-                                                            />
-                                                        </label>
+                                                        <h4 className="consultation-medical-upload-title">Upload Medical Reports</h4>
+                                                        <div className="consultation-medical-upload-help">
+                                                            <div>PDF, JPG, JPEG or PNG</div>
+                                                            <div>Multiple files allowed</div>
+                                                        </div>
+                                                        <div className="consultation-medical-upload-list">
+                                                            {Array.from({ length: visibleUploadRows }).map((_, i) => (
+                                                                <div key={i} className="consultation-medical-upload-row">
+                                                                    <label htmlFor={`medical-report-${i}`} className="consultation-medical-upload-button">
+                                                                        <Upload size={18} />
+                                                                        <span>Choose File</span>
+                                                                    </label>
+                                                                    <input 
+                                                                        id={`medical-report-${i}`}
+                                                                        type="file" 
+                                                                        accept=".pdf,.jpg,.jpeg,.png" 
+                                                                        onChange={(e) => handleFileChange(e, i)} 
+                                                                        className="consultation-medical-file-input" 
+                                                                    />
+                                                                    <div className="consultation-medical-file-name">
+                                                                        {medicalReports[i] ? medicalReports[i].name : "No file selected"}
+                                                                    </div>
+                                                                    {i === visibleUploadRows - 1 && medicalReports[i] && visibleUploadRows < 4 && (
+                                                                        <button 
+                                                                            type="button" 
+                                                                            onClick={() => setVisibleUploadRows(prev => Math.min(prev + 1, 4))} 
+                                                                            className="consultation-medical-add-button"
+                                                                        >
+                                                                            <Plus size={20} />
+                                                                        </button>
+                                                                    )}
+                                                                </div>
+                                                            ))}
+                                                        </div>
                                                     </div>
-                                                    {medicalReports.length > 0 && (
-                                                        <div className="mt-2 text-sm text-gray-600">
-                                                            {medicalReports.length} file(s) selected
-                                                        </div>
-                                                    )}
                                                 </div>
                                                 </div>
 
@@ -966,7 +1005,7 @@ const ConsultationBooking: React.FC = () => {
                                                         ) : fetchingSlots ? (
                                                             <div className={`${inputClasses} flex justify-center`}><Loader2 className="animate-spin text-[#38996E]" /></div>
                                                         ) : availableSlots.length === 0 ? (
-                                                            <div className={`${inputClasses} bg-[#f8d7da] text-[#842029] border-[#f5c2c7] d-flex align-items-center justify-content-center`} style={{ whiteSpace: 'pre-line' }}>{slotMessage}</div>
+                                                            <div className={`${inputClasses} bg-[#FFF9E6] text-[#92400E] border-[#FDE68A] flex items-center justify-center`} style={{ whiteSpace: 'pre-line' }}>{slotMessage}</div>
                                                         ) : (
                                                             <select name="appointmentTime" value={formData.appointmentTime} onChange={handleChange} className={`${selectClasses} custom-select-bg`} data-error={!!errors.appointmentTime} required>
                                                                 <option value="">Select time slot</option>
@@ -988,8 +1027,8 @@ const ConsultationBooking: React.FC = () => {
                                                 {/* 7. Commitment Level */}
                                                 <div className="flex items-center mb-[28px]"><div className="w-8 h-8 rounded-[8px] bg-[#E8F5E9] text-[#2B7A58] flex items-center justify-center font-bold mr-3 text-[15px]">6</div><h2 className="text-[18px] md:text-[20px] font-bold text-gray-800">Commitment</h2></div>
                                                 <div className="row">
-                                                    <div className="col-12 col-md-4 form-group-mb" data-error={!!errors.readyForNaturalDiet}>
-                                                    <label className={labelClasses}>Are you ready to follow a natural diet? <span className="text-[#D23636] font-bold">*</span></label>
+                                                    <div className="col-12 col-md-4 form-group-mb commitment-question" data-error={!!errors.readyForNaturalDiet}>
+                                                    <label className={`${labelClasses} commitment-question-label`}>Are you ready to follow a natural diet? <span className="text-[#D23636] font-bold">*</span></label>
                                                     <div className="radio-group-horiz">
                                                         <label className="radio-label">
                                                             <input type="radio" name="readyForNaturalDiet" value="Yes" checked={formData.readyForNaturalDiet === 'Yes'} onChange={handleChange} className="custom-radio-input" required /> Yes
@@ -1000,8 +1039,8 @@ const ConsultationBooking: React.FC = () => {
                                                     </div>
                                                     {errors.readyForNaturalDiet && <div className={errorClasses}>{errors.readyForNaturalDiet}</div>}
                                                 </div>
-                                                <div className="col-12 col-md-4 form-group-mb" data-error={!!errors.readyToAvoidSugar}>
-                                                    <label className={labelClasses} style={{ minHeight: "47px" }}>Are you willing to avoid sugar? <span className="text-[#D23636] font-bold">*</span></label>
+                                                <div className="col-12 col-md-4 form-group-mb commitment-question" data-error={!!errors.readyToAvoidSugar}>
+                                                    <label className={`${labelClasses} commitment-question-label`}>Are you willing to avoid sugar? <span className="text-[#D23636] font-bold">*</span></label>
                                                     <div className="radio-group-horiz">
                                                         <label className="radio-label">
                                                             <input type="radio" name="readyToAvoidSugar" value="Yes" checked={formData.readyToAvoidSugar === 'Yes'} onChange={handleChange} className="custom-radio-input" required /> Yes
@@ -1012,8 +1051,8 @@ const ConsultationBooking: React.FC = () => {
                                                     </div>
                                                     {errors.readyToAvoidSugar && <div className={errorClasses}>{errors.readyToAvoidSugar}</div>}
                                                 </div>
-                                                <div className="col-12 col-md-4 form-group-mb" data-error={!!errors.familySupport}>
-                                                    <label className={labelClasses}>Does your family support this lifestyle? <span className="text-[#D23636] font-bold">*</span></label>
+                                                <div className="col-12 col-md-4 form-group-mb commitment-question" data-error={!!errors.familySupport}>
+                                                    <label className={`${labelClasses} commitment-question-label`}>Does your family support this lifestyle? <span className="text-[#D23636] font-bold">*</span></label>
                                                     <div className="radio-group-horiz">
                                                         <label className="radio-label">
                                                             <input type="radio" name="familySupport" value="Yes" checked={formData.familySupport === 'Yes'} onChange={handleChange} className="custom-radio-input" required /> Yes

@@ -138,12 +138,220 @@
   width: 22px !important;
 }
 
-.btnconsult{
-  element.style {
-    height: 40px;
-    background-color: black;
-    width: 200px;
-    border-radius: 8px;
-}
+.consultation-page-body .btnconsult {
+  height: 52px;
+  background-color: #2B7A58;
+  color: white;
+  border-radius: 10px;
+  font-weight: 600;
+  border: none;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 6px rgba(43, 122, 88, 0.2);
 }
 
+.consultation-page-body .btnconsult:hover:not(:disabled) {
+  background-color: #215E44;
+  box-shadow: 0 6px 10px rgba(33, 94, 68, 0.3);
+  transform: translateY(-1px);
+}
+
+.consultation-page-body .btnconsult:active:not(:disabled) {
+  transform: translateY(1px);
+  box-shadow: 0 2px 4px rgba(33, 94, 68, 0.2);
+}
+
+.consultation-page-body .btnconsult:disabled {
+  background-color: #9CA3AF;
+  box-shadow: none;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.consultation-page-body .commitment-question {
+    display: flex;
+    flex-direction: column;
+}
+
+.consultation-page-body .commitment-question-label {
+    min-height: 48px;
+    display: flex;
+    align-items: flex-start;
+}
+
+.consultation-page-body .commitment-question .radio-group-horiz {
+    margin-top: auto;
+}
+
+@media (max-width: 767px) {
+    .consultation-page-body .commitment-question-label {
+        min-height: auto;
+        margin-bottom: 8px;
+    }
+}
+
+.consultation-page-body .consultation-medical-upload-card {
+    width: 100%;
+    padding: 20px;
+    margin-top: 8px;
+    background: #fbfdf8;
+    border: 1px dashed #b7d5c5;
+    border-radius: 12px;
+}
+
+.consultation-page-body .consultation-medical-upload-icon {
+    width: 52px;
+    height: 52px;
+    margin: 0 auto 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: #E8F5E9;
+    color: #2B7A58;
+}
+
+.consultation-page-body .consultation-medical-upload-title {
+    margin-bottom: 6px;
+    font-weight: 600;
+    color: #215E44;
+    text-align: center;
+}
+
+.consultation-page-body .consultation-medical-upload-help {
+    margin-bottom: 16px;
+    color: #666;
+    text-align: center;
+}
+
+.consultation-page-body .consultation-medical-upload-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.consultation-page-body .consultation-medical-upload-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    margin-top: 12px;
+}
+
+.consultation-page-body .consultation-medical-choose-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+
+    min-width: 150px;
+    height: 44px;
+    padding: 0 20px;
+
+    background-color: #2B7A58 !important;
+    color: #ffffff !important;
+
+    border: 1px solid #2B7A58 !important;
+    border-radius: 10px;
+
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1;
+
+    cursor: pointer;
+    text-decoration: none;
+
+    box-shadow: 0 4px 10px rgba(43, 122, 88, 0.16);
+
+    transition:
+        background-color 0.2s ease,
+        border-color 0.2s ease,
+        box-shadow 0.2s ease,
+        transform 0.1s ease;
+
+    flex-shrink: 0;
+}
+
+.consultation-page-body .consultation-medical-choose-button:hover {
+    background-color: #215E44 !important;
+    border-color: #215E44 !important;
+    color: #ffffff !important;
+    box-shadow: 0 5px 14px rgba(43, 122, 88, 0.22);
+}
+
+.consultation-page-body .consultation-medical-choose-button:active {
+    transform: translateY(1px);
+}
+
+.consultation-page-body .consultation-medical-file-name {
+    flex: 1;
+    min-width: 0;
+    padding: 0 4px;
+
+    color: #555;
+    font-size: 14px;
+
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.consultation-page-body .consultation-medical-add-button {
+    width: 42px;
+    height: 42px;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    flex: 0 0 42px;
+
+    border: 1px solid #2B7A58;
+    border-radius: 10px;
+
+    background-color: #E8F5E9;
+    color: #2B7A58;
+
+    cursor: pointer;
+
+    transition:
+        background-color 0.2s ease,
+        color 0.2s ease,
+        border-color 0.2s ease;
+}
+
+.consultation-page-body .consultation-medical-add-button:hover {
+    background-color: #2B7A58;
+    color: #ffffff;
+}
+
+.consultation-page-body .consultation-medical-file-input {
+    position: absolute !important;
+    width: 1px !important;
+    height: 1px !important;
+    padding: 0 !important;
+    margin: -1px !important;
+    overflow: hidden !important;
+    clip: rect(0, 0, 0, 0) !important;
+    white-space: nowrap !important;
+    border: 0 !important;
+    opacity: 0 !important;
+}
+
+@media (max-width: 576px) {
+    .consultation-page-body .consultation-medical-upload-row {
+        display: grid;
+        grid-template-columns: 1fr 42px;
+        gap: 8px;
+    }
+
+    .consultation-page-body .consultation-medical-choose-button {
+        min-width: 0;
+        width: 100%;
+    }
+
+    .consultation-page-body .consultation-medical-file-name {
+        grid-column: 1 / -1;
+        white-space: normal;
+        overflow-wrap: anywhere;
+    }
+}

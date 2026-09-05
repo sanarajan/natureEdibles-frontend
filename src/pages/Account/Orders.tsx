@@ -101,6 +101,7 @@ const Orders: React.FC = () => {
                                         <ul>
                                             <li><Link to="/account">Dashboard</Link></li>
                                             <li><Link to="/account/orders" className="active">Orders</Link></li>
+                                            <li><Link to="/account/consultations">Consultation History</Link></li>
                                             <li><Link to="#">Downloads</Link></li>
                                             <li><Link to="#">Return request</Link></li>
                                         </ul>

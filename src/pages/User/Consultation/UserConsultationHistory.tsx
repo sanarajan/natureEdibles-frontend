@@ -84,9 +84,9 @@ const UserConsultationHistory: React.FC = () => {
                                         <ul>
                                             <li><Link to="/account">Dashboard</Link></li>
                                             <li><Link to="/account/orders">Orders</Link></li>
+                                            <li className="active"><Link to="/account/consultations">Consultation History</Link></li>
                                             <li><Link to="/account/downloads">Downloads</Link></li>
                                             <li><Link to="/account/return">Return request</Link></li>
-                                            <li><Link to="/account/consultations" className="active">Consultations</Link></li>
                                         </ul>
                                         <div className="nav-title bg-light uppercase">ACCOUNT SETTINGS</div>
                                         <ul className="account-info-list">

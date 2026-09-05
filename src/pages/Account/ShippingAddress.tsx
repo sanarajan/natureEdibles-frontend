@@ -152,6 +152,7 @@ const ShippingAddress: React.FC = () => {
                                         <ul>
                                             <li><Link to="/account">Dashboard</Link></li>
                                             <li><Link to="/account/orders">Orders</Link></li>
+                                            <li><Link to="/account/consultations">Consultation History</Link></li>
                                             <li><Link to="/account/downloads">Downloads</Link></li>
                                             <li><Link to="/account/return">Return request</Link></li>
                                         </ul>
