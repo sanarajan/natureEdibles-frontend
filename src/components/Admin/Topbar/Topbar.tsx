@@ -16,10 +16,15 @@ import {
     LogOut,
     User
 } from 'lucide-react';
+import { getAdminNotifications, markAdminNotificationAsRead } from '../../../services/api/adminNotificationApi';
+import type { Notification } from '../../../services/api/notificationApi';
 import './Topbar.css';
 
 const Topbar: React.FC = () => {
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+    const [isNotificationOpen, setIsNotificationOpen] = useState(false);
+    const [notifications, setNotifications] = useState<Notification[]>([]);
+    const [unreadNotificationCount, setUnreadNotificationCount] = useState(0);
     const dispatch = useDispatch();
     const navigate = useNavigate();
     const adminData = useSelector((state: RootState) => state.auth.admin.data);
@@ -71,6 +76,41 @@ const Topbar: React.FC = () => {
         );
     };
 
+    React.useEffect(() => {
+        const fetchNotifications = async () => {
+            try {
+                const res = await getAdminNotifications();
+                if (res.success && res.data) {
+                    setNotifications(res.data.notifications || []);
+                    setUnreadNotificationCount(res.data.unreadCount || 0);
+                }
+            } catch (error) {
+                console.error("Failed to fetch admin notifications", error);
+            }
+        };
+
+        fetchNotifications();
+        const interval = setInterval(fetchNotifications, 30000);
+        return () => clearInterval(interval);
+    }, []);
+
+    const handleNotificationClick = async (notification: Notification) => {
+        if (!notification.isRead) {
+            try {
+                await markAdminNotificationAsRead(notification._id);
+                setNotifications(notifications.map(n => n._id === notification._id ? { ...n, isRead: true } : n));
+                setUnreadNotificationCount(prev => Math.max(0, prev - 1));
+            } catch (error) {
+                console.error("Failed to mark notification as read", error);
+            }
+        }
+        
+        setIsNotificationOpen(false);
+        if (notification.type === 'NEW_CONSULTATION_BOOKING') {
+            navigate('/admin/consultations');
+        }
+    };
+
     return (
         <header className="admin-topbar">
             <div className="topbar-left">
@@ -96,10 +136,52 @@ const Topbar: React.FC = () => {
                     <button className="action-btn">
                         <Languages size={20} />
                     </button>
-                    <button className="action-btn">
-                        <Bell size={20} />
-                        <span className="badge">9+</span>
-                    </button>
+                    <div style={{ position: 'relative' }}>
+                        <button className="action-btn" onClick={() => setIsNotificationOpen(!isNotificationOpen)}>
+                            <Bell size={20} />
+                            {unreadNotificationCount > 0 && (
+                                <span className="badge">{unreadNotificationCount}</span>
+                            )}
+                        </button>
+                        
+                        {isNotificationOpen && (
+                            <div style={{
+                                position: 'absolute', top: '100%', right: 0, marginTop: '10px',
+                                background: '#fff', border: '1px solid #e2e8f0', borderRadius: '12px',
+                                boxShadow: '0 10px 25px rgba(0,0,0,0.1)', width: '320px', maxHeight: '400px', 
+                                overflowY: 'auto', zIndex: 100
+                            }}>
+                                <div style={{ padding: '16px', borderBottom: '1px solid #f1f5f9', fontWeight: 'bold', position: 'sticky', top: 0, backgroundColor: '#f9f9f9', zIndex: 1 }}>
+                                    Notifications
+                                </div>
+                                {notifications.length === 0 ? (
+                                    <div style={{ padding: '16px', textAlign: 'center', color: '#64748b' }}>No new notifications</div>
+                                ) : (
+                                    notifications.map((notification) => (
+                                        <div 
+                                            key={notification._id} 
+                                            onClick={() => handleNotificationClick(notification)}
+                                            style={{ 
+                                                padding: '12px 16px', 
+                                                borderBottom: '1px solid #f1f5f9', 
+                                                cursor: 'pointer',
+                                                backgroundColor: notification.isRead ? '#ffffff' : '#f0fdf4'
+                                            }}
+                                        >
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '4px' }}>
+                                                <strong style={{ fontSize: '14px', color: '#333' }}>{notification.title}</strong>
+                                                {!notification.isRead && <span style={{ width: '8px', height: '8px', backgroundColor: '#0D775E', borderRadius: '50%', marginTop: '6px' }}></span>}
+                                            </div>
+                                            <p style={{ margin: '0 0 4px 0', fontSize: '13px', color: '#64748b', lineHeight: '1.4' }}>{notification.message}</p>
+                                            <small style={{ fontSize: '11px', color: '#94a3b8' }}>
+                                                {new Date(notification.createdAt).toLocaleDateString()} {new Date(notification.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                                            </small>
+                                        </div>
+                                    ))
+                                )}
+                            </div>
+                        )}
+                    </div>
                 </div>
 
                 <div className="user-profile" onClick={() => setIsDropdownOpen(!isDropdownOpen)} style={{ cursor: 'pointer', position: 'relative' }}>

@@ -43,7 +43,12 @@ export const getConsultationById = async (id: string) => {
     return response.data;
 };
 
-export const updateConsultationStatus = async (id: string, status: string, notes?: string) => {
-    const response = await adminApiClient.put(`/admin/consultation/bookings/${id}`, { status, doctorNotes: notes });
+export const updateConsultationStatus = async (id: string, updates: { status?: string; doctorNotes?: string; paymentStatus?: string; rejectionReason?: string }) => {
+    const response = await adminApiClient.put(`/admin/consultation/bookings/${id}`, updates);
+    return response.data;
+};
+
+export const updateConsultationPayment = async (id: string, upiReference: string) => {
+    const response = await userApiClient.put(`/user/consultation/${id}/payment`, { upiReference });
     return response.data;
 };

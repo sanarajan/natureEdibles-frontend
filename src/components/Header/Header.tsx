@@ -8,6 +8,7 @@ import CartSidebar from '../CartSidebar/CartSidebar';
 import SearchSidebar from '../SearchSidebar/SearchSidebar';
 import userApiClient from '../../services/userApiClient';
 import { userAuthService } from '../../services/user/userAuthService';
+import { getUserNotifications, markNotificationAsRead, type Notification } from '../../services/api/notificationApi';
 
 const Header: React.FC = () => {
     const [isHeaderSticky, setIsHeaderSticky] = useState(false);
@@ -29,6 +30,8 @@ const Header: React.FC = () => {
     const isLoggedIn = isLoggedInLocal || reduxIsAuthenticated || hasLocalUserRole;
     const [cartCount, setCartCount] = useState(0);
     const [wishlistCount, setWishlistCount] = useState(0);
+    const [notifications, setNotifications] = useState<Notification[]>([]);
+    const [unreadNotificationCount, setUnreadNotificationCount] = useState(0);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
     // Close mobile nav when a link is clicked
@@ -97,17 +100,40 @@ const Header: React.FC = () => {
             }
         };
 
+        const updateNotifications = async () => {
+            const token = localStorage.getItem('user_accessToken');
+            if (token) {
+                try {
+                    const res = await getUserNotifications();
+                    if (res.success && res.data) {
+                        setNotifications(res.data.notifications || []);
+                        setUnreadNotificationCount(res.data.unreadCount || 0);
+                    }
+                } catch (e) { }
+            } else {
+                setNotifications([]);
+                setUnreadNotificationCount(0);
+            }
+        };
+
         window.addEventListener('scroll', handleScroll);
         window.addEventListener('storage', checkLogin);
         window.addEventListener('cart-updated', updateCartCount);
         window.addEventListener('wishlist-updated', updateWishlistCount);
         updateCartCount();
         updateWishlistCount();
+        if (isLoggedInLocal) {
+            updateNotifications();
+        }
 
         // Interval check for login state (since storage event only works across tabs)
         const interval = setInterval(() => {
             checkLogin();
         }, 1000);
+
+        const notificationInterval = setInterval(() => {
+            if (isLoggedInLocal) updateNotifications();
+        }, 30000);
 
         return () => {
             window.removeEventListener('scroll', handleScroll);
@@ -115,8 +141,9 @@ const Header: React.FC = () => {
             window.removeEventListener('cart-updated', updateCartCount);
             window.removeEventListener('wishlist-updated', updateWishlistCount);
             clearInterval(interval);
+            clearInterval(notificationInterval);
         };
-    }, []);
+    }, [isLoggedInLocal]);
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -184,6 +211,22 @@ const Header: React.FC = () => {
         setIsLoggedInLocal(false);
         navigate('/login');
         toast.success("Successfully logged out", { position: "top-right", autoClose: 3000 });
+    };
+    const handleNotificationClick = async (notification: Notification) => {
+        if (!notification.isRead) {
+            try {
+                await markNotificationAsRead(notification._id);
+                setNotifications(notifications.map(n => n._id === notification._id ? { ...n, isRead: true } : n));
+                setUnreadNotificationCount(prev => Math.max(0, prev - 1));
+            } catch (error) {
+                console.error("Failed to mark notification as read", error);
+            }
+        }
+        
+        // Navigation logic for generic notification system
+        if (notification.type && notification.type.startsWith('CONSULTATION_')) {
+            navigate('/account/consultations');
+        }
     };
 
     return (
@@ -274,6 +317,76 @@ const Header: React.FC = () => {
                                             </svg>
                                         </a>
                                     </li>
+                                    {/* Notification icon */}
+                                    {isLoggedIn && (
+                                        <li className="nav-item wishlist-link dropdown">
+                                            <a className="nav-link" href="#" id="notificationDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#24262B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                                                    <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                                                </svg>
+                                                {unreadNotificationCount > 0 && (
+                                                    <span className="badge badge-circle" style={{
+                                                        position: 'absolute',
+                                                        top: '0',
+                                                        right: '0',
+                                                        background: '#e74c3c',
+                                                        color: '#fff',
+                                                        fontSize: '10px',
+                                                        padding: '2px 5px',
+                                                        borderRadius: '50%',
+                                                        fontWeight: 'bold',
+                                                        minWidth: '18px',
+                                                        height: '18px',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'center',
+                                                        transform: 'translate(50%, -50%)'
+                                                    }}>
+                                                        {unreadNotificationCount}
+                                                    </span>
+                                                )}
+                                            </a>
+                                            <ul className="dropdown-menu dropdown-menu-end border-0 shadow-lg mt-3"
+                                                aria-labelledby="notificationDropdown"
+                                                style={{
+                                                    borderRadius: '15px',
+                                                    width: '320px',
+                                                    maxHeight: '400px',
+                                                    overflowY: 'auto',
+                                                    padding: '0',
+                                                    backgroundColor: '#ffffff'
+                                                }}
+                                            >
+                                                <li className="px-4 py-3 border-bottom" style={{ fontWeight: 'bold', backgroundColor: '#f9f9f9', position: 'sticky', top: 0, zIndex: 1 }}>
+                                                    Notifications
+                                                </li>
+                                                {notifications.length === 0 ? (
+                                                    <li className="px-4 py-4 text-center text-muted">No new notifications</li>
+                                                ) : (
+                                                    notifications.map((notification) => (
+                                                        <li key={notification._id} className="border-bottom" style={{ backgroundColor: notification.isRead ? '#ffffff' : '#f0fdf4' }}>
+                                                            <div 
+                                                                className="px-4 py-3" 
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    handleNotificationClick(notification);
+                                                                }}
+                                                                style={{ cursor: 'pointer', transition: 'background-color 0.2s' }}
+                                                            >
+                                                                <div className="d-flex justify-content-between align-items-start mb-1">
+                                                                    <strong style={{ fontSize: '14px', color: '#333' }}>{notification.title}</strong>
+                                                                    {!notification.isRead && <span style={{ width: '8px', height: '8px', backgroundColor: '#0D775E', borderRadius: '50%', marginTop: '6px' }}></span>}
+                                                                </div>
+                                                                <p className="mb-1 text-muted" style={{ fontSize: '13px', lineHeight: '1.4' }}>{notification.message}</p>
+                                                                <small className="text-muted" style={{ fontSize: '11px' }}>{new Date(notification.createdAt).toLocaleDateString()} {new Date(notification.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</small>
+                                                            </div>
+                                                        </li>
+                                                    ))
+                                                )}
+                                            </ul>
+                                        </li>
+                                    )}
                                     {/* Wishlist icon */}
                                     <li className="nav-item wishlist-link" onClick={() => setActiveTab('wishlist')}>
                                         <a href="javascript:void(0);" className="nav-link"

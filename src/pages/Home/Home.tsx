@@ -231,7 +231,7 @@ const Home: React.FC = () => {
                 <div className="container">
                     <div className="banner-content">
                         <div className="row gx-0">
-                            <div className="col-md-12 col-lg-8 align-self-center">
+                            <div className="col-md-12 col-lg-7 align-self-center">
                                 <div className="inner-content">
                                     <div className="content-info">
                                         <h1 className="title wow flipInX animated" data-wow-delay="0.5s">
@@ -245,68 +245,15 @@ const Home: React.FC = () => {
                                         </div>
                                     </div>
                                 </div>
-                                <div className="row gx-0">
-                                    <div className="col-sm-12 col-md-6 col-lg-5 mb-3 wow fadeInUp" data-wow-delay="0.1s">
-                                        <div className="product-card" onClick={() => featuredProducts[0] && setQuickViewProduct(featuredProducts[0])} style={{ cursor: 'pointer' }}>
-                                            <div className="dz-media">
-                                                <img src={featuredProducts[0]?.images?.[0] || smallPic1} alt="/" />
-                                            </div>
-                                            <div className="dz-content">
-                                                <h5 className="dz-title">{featuredProducts[0]?.productName || 'Metavya'}</h5>
-                                                <span className="price">
-                                                    ₹{featuredProducts[0]?.offerPrice?.toFixed(2) || featuredProducts[0]?.price?.toFixed(2) || '18.00'}
-                                                    {featuredProducts[0]?.offerPrice && featuredProducts[0]?.offerPrice < featuredProducts[0]?.price && (
-                                                        <del className="ms-1">₹{featuredProducts[0]?.price?.toFixed(2)}</del>
-                                                    )}
-                                                </span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div className="col-sm-12 col-md-6 col-lg-5 wow fadeInUp" data-wow-delay="0.1s">
-                                        <div className="product-card" onClick={() => featuredProducts[1] && setQuickViewProduct(featuredProducts[1])} style={{ cursor: 'pointer' }}>
-                                            <div className="dz-media">
-                                                <img src={featuredProducts[1]?.images?.[0] || smallPic2} alt="/" />
-                                            </div>
-                                            <div className="dz-content">
-                                                <h5 className="dz-title">{featuredProducts[1]?.productName || 'Femroot'}</h5>
-                                                <span className="price">
-                                                    ₹{featuredProducts[1]?.offerPrice?.toFixed(2) || featuredProducts[1]?.price?.toFixed(2) || '18.00'}
-                                                    {featuredProducts[1]?.offerPrice && featuredProducts[1]?.offerPrice < featuredProducts[1]?.price && (
-                                                        <del className="ms-1">₹{featuredProducts[1]?.price?.toFixed(2)}</del>
-                                                    )}
-                                                </span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
                             </div>
-                            <div className="col-md-12 col-lg-4">
-                                <div className="banner-media">
-                                    <div className="img-preview wow slideInRight" data-wow-delay="0.1s" data-wow-duration="1.5s">
-                                        <img src={bannerMedia1} alt="banner-media" />
-                                    </div>
-                                    <a className="animation-btn popup-youtube" href="https://www.youtube.com/watch?v=GNRj16pfsFY">
-                                        <div className="text-row word-rotate-box c-black bg-blur">
-                                            {"EXPLORE MORE COLLECTION ".split('').map((char, i, arr) => (
-                                                <span
-                                                    key={i}
-                                                    className="text__char"
-                                                    style={{ '--char-rotate': `${(i * 360) / arr.length}deg` } as React.CSSProperties}
-                                                >
-                                                    {char}
-                                                </span>
-                                            ))}
-                                            {/* Play Icon SVG */}
-                                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" className="badge__emoji" xmlns="http://www.w3.org/2000/svg">
-                                                <path d="M8 5V19L19 12L8 5Z" fill="#0D775E" />
-                                            </svg>
-                                        </div>
-                                    </a>
-                                    <div className="star">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" fill="none">
-                                            <path d="M32 0L36.1182 27.8818L64 32L36.1182 36.1182L32 64L27.8818 36.1182L0 32L27.8818 27.8818L32 0Z" fill="black" />
-                                        </svg>
-                                    </div>
+                            <div className="col-md-12 col-lg-5 align-self-center">
+                                <div className="home-hero-product-area wow slideInRight" data-wow-delay="0.1s" data-wow-duration="1.5s" style={{ position: 'relative', zIndex: 2, padding: '20px', display: 'flex', justifyContent: 'center' }}>
+                                    <img 
+                                        src={collection2} 
+                                        alt="Main Product" 
+                                        className="home-hero-main-product"
+                                        style={{ width: '100%', maxWidth: '480px', height: 'auto', maxHeight: '75vh', objectFit: 'contain', filter: 'drop-shadow(0px 15px 25px rgba(0,0,0,0.15))', position: 'relative', zIndex: 5 }}
+                                    />
                                 </div>
                             </div>
                         </div>
@@ -322,9 +269,6 @@ const Home: React.FC = () => {
                 <div className="left-text-bar justify-content-center">
                     <Link to="/contact" className="service-btn btn-dark">Let's talk</Link>
                 </div>
-                <div className="collection1"><img src={collection1} alt="" /></div>
-                <div className="collection2"><img src={collection2} alt="" /></div>
-                <div className="collection3"><img src={collection3} alt="" /></div>
             </div>
 
             {/* Product Categories Start */}
