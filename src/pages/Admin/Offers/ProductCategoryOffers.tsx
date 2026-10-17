@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Edit, Trash2, Tag, Calendar, Power, Search, LayoutGrid, Package } from 'lucide-react';
-import apiClient from '../../../services/apiClient';
+import apiClient from '../../../services/adminApiClient';
 import { toast } from 'react-toastify';
 import './Offers.css';
 
