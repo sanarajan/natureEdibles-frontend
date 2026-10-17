@@ -7,6 +7,7 @@ import { toast } from 'react-toastify';
 import ReactApexChart from 'react-apexcharts';
 import type { ApexOptions } from 'apexcharts';
 import userApiClient from '../../services/userApiClient';
+import { userAuthService } from '../../services/user/userAuthService';
 
 const Account: React.FC = () => {
     const dispatch = useDispatch();
@@ -36,11 +37,16 @@ const Account: React.FC = () => {
         }
     }, [isAuthenticated, navigate]);
 
-    const handleLogout = (e: React.MouseEvent) => {
+    const handleLogout = async (e: React.MouseEvent) => {
         e.preventDefault();
+        try {
+            await userAuthService.logout();
+        } catch (err) {
+            console.error('Logout error:', err);
+        }
         dispatch(userLogout());
         toast.info('You have safely logged out.');
-        navigate('/login');
+        navigate('/login', { replace: true });
     };
 
     const chartOptions: ApexOptions = {

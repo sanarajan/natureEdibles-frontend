@@ -70,6 +70,8 @@ userApiClient.interceptors.response.use(
                     throw new Error("Invalid refresh response");
                 }
             } catch (refreshError) {
+                localStorage.removeItem('user_accessToken');
+                localStorage.removeItem('user_data');
                 window.location.href = '/login';
                 return Promise.reject(refreshError);
             }

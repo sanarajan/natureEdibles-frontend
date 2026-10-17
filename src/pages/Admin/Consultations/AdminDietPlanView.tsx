@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { 
     Calendar, Utensils, Droplets, Activity, FileText, 
     ArrowLeft, CheckCircle2, AlertCircle, Info, Clock, 
-    Printer, ShieldCheck
+    Printer, ShieldCheck, ChevronDown, ChevronRight
 } from 'lucide-react';
 import adminApiClient from '../../../services/adminApiClient';
 import { 
@@ -39,7 +39,7 @@ const AdminDietPlanView: React.FC<AdminDietPlanViewProps> = ({
 
     // Hierarchy browsing state
     const [selectedMonth, setSelectedMonth] = useState<number>(1);
-    const [selectedWeek, setSelectedWeek] = useState<number | 'ALL'>('ALL');
+    const [openWeek, setOpenWeek] = useState<number | null>(null);
     const [showOnlyConfiguredDays, setShowOnlyConfiguredDays] = useState<boolean>(false);
 
     useEffect(() => {
@@ -117,13 +117,6 @@ const AdminDietPlanView: React.FC<AdminDietPlanViewProps> = ({
     const daysInSelectedMonth = schedule.filter(d => d.month === selectedMonth);
     const availableWeeksInMonth = Array.from(new Set(daysInSelectedMonth.map(d => d.week))).sort((a, b) => a - b);
 
-    let displayedDays = daysInSelectedMonth;
-    if (selectedWeek !== 'ALL') {
-        displayedDays = daysInSelectedMonth.filter(d => d.week === selectedWeek);
-    }
-    if (showOnlyConfiguredDays) {
-        displayedDays = displayedDays.filter(hasDietContent);
-    }
 
     const totalDaysCount = schedule.length;
     const configuredDaysCount = schedule.filter(hasDietContent).length;
@@ -257,8 +250,8 @@ const AdminDietPlanView: React.FC<AdminDietPlanViewProps> = ({
                                 </div>
                             </div>
 
-                            {/* Month Tabs */}
-                            {durationMonths > 1 && (
+                            {/* Month Header / Tabs */}
+                            {durationMonths > 1 ? (
                                 <div className="d-flex gap-2 mb-3 pb-2 border-bottom overflow-auto">
                                     {Array.from({ length: durationMonths }, (_, i) => i + 1).map(m => {
                                         const mDays = schedule.filter(d => d.month === m);
@@ -271,7 +264,7 @@ const AdminDietPlanView: React.FC<AdminDietPlanViewProps> = ({
                                                 style={{ borderRadius: '10px' }}
                                                 onClick={() => {
                                                     setSelectedMonth(m);
-                                                    setSelectedWeek('ALL');
+                                                    setOpenWeek(null);
                                                 }}
                                             >
                                                 Month {m}
@@ -282,169 +275,201 @@ const AdminDietPlanView: React.FC<AdminDietPlanViewProps> = ({
                                         );
                                     })}
                                 </div>
+                            ) : (
+                                <div className="mb-3 pb-2 border-bottom d-flex align-items-center justify-content-between">
+                                    <h6 className="fw-bold mb-0 text-dark text-uppercase small">Month 1</h6>
+                                    <span className="badge bg-light text-secondary border small">
+                                        {schedule.filter(d => d.month === 1 && hasDietContent(d)).length} / {daysInSelectedMonth.length} days configured
+                                    </span>
+                                </div>
                             )}
 
-                            {/* Week Tabs within selected Month */}
-                            <div className="d-flex gap-2 mb-4 pb-2 border-bottom overflow-auto">
-                                <button
-                                    type="button"
-                                    className={`btn btn-sm px-3 ${selectedWeek === 'ALL' ? 'btn-success text-white shadow-sm' : 'btn-outline-secondary'}`}
-                                    style={{ borderRadius: '8px' }}
-                                    onClick={() => setSelectedWeek('ALL')}
-                                >
-                                    All Weeks (Month {selectedMonth})
-                                </button>
-                                {availableWeeksInMonth.map(w => {
-                                    const wDays = daysInSelectedMonth.filter(d => d.week === w);
-                                    const wConfigured = wDays.filter(hasDietContent).length;
-                                    return (
-                                        <button
-                                            key={w}
-                                            type="button"
-                                            className={`btn btn-sm px-3 ${selectedWeek === w ? 'btn-success text-white shadow-sm' : 'btn-outline-secondary'}`}
-                                            style={{ borderRadius: '8px' }}
-                                            onClick={() => setSelectedWeek(w)}
-                                        >
-                                            Week {w}
-                                            <span className="badge bg-dark bg-opacity-25 ms-1" style={{ fontSize: '0.68rem' }}>
-                                                {wConfigured}/{wDays.length}
-                                            </span>
-                                        </button>
-                                    );
-                                })}
-                            </div>
-
-                            {/* Days List */}
-                            {displayedDays.length === 0 ? (
+                            {/* Weeks Accordion within selected Month */}
+                            {availableWeeksInMonth.length === 0 ? (
                                 <div className="alert alert-light border p-4 text-center rounded-3 text-muted">
-                                    No diet entries found for the selected filter.
+                                    No diet entries found for Month {selectedMonth}.
                                 </div>
                             ) : (
                                 <div className="d-flex flex-column gap-3">
-                                    {displayedDays.map(day => {
-                                        const hasData = hasDietContent(day);
+                                    {availableWeeksInMonth.map(w => {
+                                        const isOpen = openWeek === w;
+                                        const wDays = daysInSelectedMonth.filter(d => d.week === w);
+                                        const wConfigured = wDays.filter(hasDietContent).length;
+                                        const displayedWeekDays = showOnlyConfiguredDays ? wDays.filter(hasDietContent) : wDays;
+
                                         return (
                                             <div 
-                                                key={day.dayIndex} 
-                                                className={`border rounded-4 p-3 transition-all ${hasData ? 'bg-white' : 'bg-light bg-opacity-50'}`}
-                                                style={{ borderLeftWidth: '5px', borderLeftColor: hasData ? '#22c55e' : '#cbd5e1' }}
+                                                key={w} 
+                                                className="border rounded-4 bg-white shadow-sm overflow-hidden"
+                                                style={{ borderColor: isOpen ? '#22c55e' : '#e2e8f0' }}
                                             >
-                                                {/* Day Header */}
-                                                <div className="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom flex-wrap gap-2">
+                                                {/* Week Header (Accordion Trigger) */}
+                                                <button
+                                                    type="button"
+                                                    className={`w-100 btn text-start p-3 px-4 d-flex justify-content-between align-items-center border-0 ${isOpen ? 'bg-light' : 'bg-white'}`}
+                                                    style={{ cursor: 'pointer', transition: 'background-color 0.2s' }}
+                                                    onClick={() => setOpenWeek(prev => prev === w ? null : w)}
+                                                    aria-expanded={isOpen}
+                                                >
                                                     <div className="d-flex align-items-center gap-2">
-                                                        <span className="badge bg-primary px-2 py-1 rounded-2" style={{ fontSize: '0.8rem' }}>
-                                                            Day {day.dayIndex}
-                                                        </span>
-                                                        <h6 className="fw-bold mb-0 text-dark">
-                                                            {day.label}
-                                                        </h6>
-                                                        <small className="text-muted">({day.date})</small>
+                                                        {isOpen ? (
+                                                            <ChevronDown size={20} className="text-primary flex-shrink-0" />
+                                                        ) : (
+                                                            <ChevronRight size={20} className="text-secondary flex-shrink-0" />
+                                                        )}
+                                                        <span className="fw-bold text-dark fs-6">Week {w}</span>
                                                     </div>
 
                                                     <div className="d-flex align-items-center gap-2">
                                                         <span className="badge bg-light text-secondary border small">
-                                                            Month {day.month} • Week {day.week}
+                                                            {wConfigured} / {wDays.length} days
                                                         </span>
-                                                        {hasData ? (
-                                                            <span className="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 small d-flex align-items-center gap-1">
+                                                        {wConfigured === wDays.length && wDays.length > 0 && (
+                                                            <span className="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 small d-none d-sm-inline-flex align-items-center gap-1">
                                                                 <CheckCircle2 size={12} /> Configured
-                                                            </span>
-                                                        ) : (
-                                                            <span className="badge bg-light text-muted border small">
-                                                                Empty Day
                                                             </span>
                                                         )}
                                                     </div>
-                                                </div>
+                                                </button>
 
-                                                {/* Meal Fields Grid */}
-                                                <div className="row g-3">
-                                                    {/* Breakfast */}
-                                                    <div className="col-md-6 col-lg-4">
-                                                        <div className="p-3 rounded-3 bg-light h-100">
-                                                            <span className="fw-bold small text-muted d-block mb-1">☕ Breakfast</span>
-                                                            <p className="mb-0 text-dark small" style={{ whiteSpace: 'pre-line' }}>
-                                                                {day.meals.breakfast ? day.meals.breakfast : <span className="text-muted">—</span>}
-                                                            </p>
-                                                        </div>
-                                                    </div>
+                                                {/* Week Days (Accordion Content) */}
+                                                {isOpen && (
+                                                    <div className="p-3 px-4 border-top bg-light bg-opacity-25 d-flex flex-column gap-3">
+                                                        {displayedWeekDays.length === 0 ? (
+                                                            <div className="alert alert-light border p-3 text-center rounded-3 text-muted small mb-0">
+                                                                No diet entries found for Week {w}.
+                                                            </div>
+                                                        ) : (
+                                                            displayedWeekDays.map(day => {
+                                                                const hasData = hasDietContent(day);
+                                                                return (
+                                                                    <div 
+                                                                        key={day.dayIndex} 
+                                                                        className={`border rounded-4 p-3 transition-all ${hasData ? 'bg-white' : 'bg-light bg-opacity-50'}`}
+                                                                        style={{ borderLeftWidth: '5px', borderLeftColor: hasData ? '#22c55e' : '#cbd5e1' }}
+                                                                    >
+                                                                        {/* Day Header */}
+                                                                        <div className="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom flex-wrap gap-2">
+                                                                            <div className="d-flex align-items-center gap-2">
+                                                                                <span className="badge bg-primary px-2 py-1 rounded-2" style={{ fontSize: '0.8rem' }}>
+                                                                                    Day {day.dayIndex}
+                                                                                </span>
+                                                                                <h6 className="fw-bold mb-0 text-dark">
+                                                                                    {day.label}
+                                                                                </h6>
+                                                                                <small className="text-muted">({day.date})</small>
+                                                                            </div>
 
-                                                    {/* Mid-Morning Snack */}
-                                                    <div className="col-md-6 col-lg-4">
-                                                        <div className="p-3 rounded-3 bg-light h-100">
-                                                            <span className="fw-bold small text-muted d-block mb-1">🍏 Mid-Morning Snack</span>
-                                                            <p className="mb-0 text-dark small" style={{ whiteSpace: 'pre-line' }}>
-                                                                {day.meals.midMorning ? day.meals.midMorning : <span className="text-muted">—</span>}
-                                                            </p>
-                                                        </div>
-                                                    </div>
+                                                                            <div className="d-flex align-items-center gap-2">
+                                                                                <span className="badge bg-light text-secondary border small">
+                                                                                    Month {day.month} • Week {day.week}
+                                                                                </span>
+                                                                                {hasData ? (
+                                                                                    <span className="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 small d-flex align-items-center gap-1">
+                                                                                        <CheckCircle2 size={12} /> Configured
+                                                                                    </span>
+                                                                                ) : (
+                                                                                    <span className="badge bg-light text-muted border small">
+                                                                                        Empty Day
+                                                                                    </span>
+                                                                                )}
+                                                                            </div>
+                                                                        </div>
 
-                                                    {/* Lunch */}
-                                                    <div className="col-md-6 col-lg-4">
-                                                        <div className="p-3 rounded-3 bg-light h-100">
-                                                            <span className="fw-bold small text-muted d-block mb-1">🥗 Lunch</span>
-                                                            <p className="mb-0 text-dark small" style={{ whiteSpace: 'pre-line' }}>
-                                                                {day.meals.lunch ? day.meals.lunch : <span className="text-muted">—</span>}
-                                                            </p>
-                                                        </div>
-                                                    </div>
+                                                                        {/* Meal Fields Grid */}
+                                                                        <div className="row g-3">
+                                                                            {/* Breakfast */}
+                                                                            <div className="col-md-6 col-lg-4">
+                                                                                <div className="p-3 rounded-3 bg-light h-100">
+                                                                                    <span className="fw-bold small text-muted d-block mb-1">☕ Breakfast</span>
+                                                                                    <p className="mb-0 text-dark small" style={{ whiteSpace: 'pre-line' }}>
+                                                                                        {day.meals.breakfast ? day.meals.breakfast : <span className="text-muted">—</span>}
+                                                                                    </p>
+                                                                                </div>
+                                                                            </div>
 
-                                                    {/* Evening Snack */}
-                                                    <div className="col-md-6 col-lg-4">
-                                                        <div className="p-3 rounded-3 bg-light h-100">
-                                                            <span className="fw-bold small text-muted d-block mb-1">🍵 Evening Snack</span>
-                                                            <p className="mb-0 text-dark small" style={{ whiteSpace: 'pre-line' }}>
-                                                                {day.meals.evening ? day.meals.evening : <span className="text-muted">—</span>}
-                                                            </p>
-                                                        </div>
-                                                    </div>
+                                                                            {/* Mid-Morning Snack */}
+                                                                            <div className="col-md-6 col-lg-4">
+                                                                                <div className="p-3 rounded-3 bg-light h-100">
+                                                                                    <span className="fw-bold small text-muted d-block mb-1">🍏 Mid-Morning Snack</span>
+                                                                                    <p className="mb-0 text-dark small" style={{ whiteSpace: 'pre-line' }}>
+                                                                                        {day.meals.midMorning ? day.meals.midMorning : <span className="text-muted">—</span>}
+                                                                                    </p>
+                                                                                </div>
+                                                                            </div>
 
-                                                    {/* Dinner */}
-                                                    <div className="col-md-6 col-lg-4">
-                                                        <div className="p-3 rounded-3 bg-light h-100">
-                                                            <span className="fw-bold small text-muted d-block mb-1">🍲 Dinner</span>
-                                                            <p className="mb-0 text-dark small" style={{ whiteSpace: 'pre-line' }}>
-                                                                {day.meals.dinner ? day.meals.dinner : <span className="text-muted">—</span>}
-                                                            </p>
-                                                        </div>
-                                                    </div>
+                                                                            {/* Lunch */}
+                                                                            <div className="col-md-6 col-lg-4">
+                                                                                <div className="p-3 rounded-3 bg-light h-100">
+                                                                                    <span className="fw-bold small text-muted d-block mb-1">🥗 Lunch</span>
+                                                                                    <p className="mb-0 text-dark small" style={{ whiteSpace: 'pre-line' }}>
+                                                                                        {day.meals.lunch ? day.meals.lunch : <span className="text-muted">—</span>}
+                                                                                    </p>
+                                                                                </div>
+                                                                            </div>
 
-                                                    {/* Water Intake */}
-                                                    <div className="col-md-6 col-lg-4">
-                                                        <div className="p-3 rounded-3 bg-light h-100">
-                                                            <span className="fw-bold small text-muted d-block mb-1 d-flex align-items-center gap-1">
-                                                                <Droplets size={14} className="text-info" /> Water Intake
-                                                            </span>
-                                                            <p className="mb-0 text-dark small">
-                                                                {day.meals.water ? day.meals.water : <span className="text-muted">—</span>}
-                                                            </p>
-                                                        </div>
-                                                    </div>
+                                                                            {/* Evening Snack */}
+                                                                            <div className="col-md-6 col-lg-4">
+                                                                                <div className="p-3 rounded-3 bg-light h-100">
+                                                                                    <span className="fw-bold small text-muted d-block mb-1">🍵 Evening Snack</span>
+                                                                                    <p className="mb-0 text-dark small" style={{ whiteSpace: 'pre-line' }}>
+                                                                                        {day.meals.evening ? day.meals.evening : <span className="text-muted">—</span>}
+                                                                                    </p>
+                                                                                </div>
+                                                                            </div>
 
-                                                    {/* Exercise & Activity */}
-                                                    <div className="col-md-6">
-                                                        <div className="p-3 rounded-3 bg-light h-100">
-                                                            <span className="fw-bold small text-muted d-block mb-1 d-flex align-items-center gap-1">
-                                                                <Activity size={14} className="text-success" /> Exercise & Activity
-                                                            </span>
-                                                            <p className="mb-0 text-dark small" style={{ whiteSpace: 'pre-line' }}>
-                                                                {day.meals.exercise ? day.meals.exercise : <span className="text-muted">—</span>}
-                                                            </p>
-                                                        </div>
-                                                    </div>
+                                                                            {/* Dinner */}
+                                                                            <div className="col-md-6 col-lg-4">
+                                                                                <div className="p-3 rounded-3 bg-light h-100">
+                                                                                    <span className="fw-bold small text-muted d-block mb-1">🍲 Dinner</span>
+                                                                                    <p className="mb-0 text-dark small" style={{ whiteSpace: 'pre-line' }}>
+                                                                                        {day.meals.dinner ? day.meals.dinner : <span className="text-muted">—</span>}
+                                                                                    </p>
+                                                                                </div>
+                                                                            </div>
 
-                                                    {/* Notes & Special Instructions */}
-                                                    <div className="col-md-6">
-                                                        <div className="p-3 rounded-3 bg-light h-100">
-                                                            <span className="fw-bold small text-muted d-block mb-1 d-flex align-items-center gap-1">
-                                                                <FileText size={14} className="text-warning" /> Notes & Instructions
-                                                            </span>
-                                                            <p className="mb-0 text-dark small" style={{ whiteSpace: 'pre-line' }}>
-                                                                {day.notes || day.meals.notes ? (day.notes || day.meals.notes) : <span className="text-muted">—</span>}
-                                                            </p>
-                                                        </div>
+                                                                            {/* Water Intake */}
+                                                                            <div className="col-md-6 col-lg-4">
+                                                                                <div className="p-3 rounded-3 bg-light h-100">
+                                                                                    <span className="fw-bold small text-muted d-block mb-1 d-flex align-items-center gap-1">
+                                                                                        <Droplets size={14} className="text-info" /> Water Intake
+                                                                                    </span>
+                                                                                    <p className="mb-0 text-dark small">
+                                                                                        {day.meals.water ? day.meals.water : <span className="text-muted">—</span>}
+                                                                                    </p>
+                                                                                </div>
+                                                                            </div>
+
+                                                                            {/* Exercise & Activity */}
+                                                                            <div className="col-md-6">
+                                                                                <div className="p-3 rounded-3 bg-light h-100">
+                                                                                    <span className="fw-bold small text-muted d-block mb-1 d-flex align-items-center gap-1">
+                                                                                        <Activity size={14} className="text-success" /> Exercise & Activity
+                                                                                    </span>
+                                                                                    <p className="mb-0 text-dark small" style={{ whiteSpace: 'pre-line' }}>
+                                                                                        {day.meals.exercise ? day.meals.exercise : <span className="text-muted">—</span>}
+                                                                                    </p>
+                                                                                </div>
+                                                                            </div>
+
+                                                                            {/* Notes & Special Instructions */}
+                                                                            <div className="col-md-6">
+                                                                                <div className="p-3 rounded-3 bg-light h-100">
+                                                                                    <span className="fw-bold small text-muted d-block mb-1 d-flex align-items-center gap-1">
+                                                                                        <FileText size={14} className="text-warning" /> Notes & Instructions
+                                                                                    </span>
+                                                                                    <p className="mb-0 text-dark small" style={{ whiteSpace: 'pre-line' }}>
+                                                                                        {day.notes || day.meals.notes ? (day.notes || day.meals.notes) : <span className="text-muted">—</span>}
+                                                                                    </p>
+                                                                                </div>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                );
+                                                            })
+                                                        )}
                                                     </div>
-                                                </div>
+                                                )}
                                             </div>
                                         );
                                     })}

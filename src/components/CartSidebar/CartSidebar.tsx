@@ -95,8 +95,13 @@ const CartSidebar: React.FC<CartSidebarProps> = ({ activeTab, setActiveTab }) =>
     }, [isUser]); // Re-register everything when auth state changes
 
     const updateQty = async (productId: string, delta: number) => {
-        const item = cartItems.find(i => i.product._id === productId);
-        if (!item) return;
+        const item = cartItems.find(i => (i.product?._id || i.product) === productId);
+        if (!item || !item.product) return;
+        const prod = item.product;
+        if (prod.isActive === false) return;
+        if (prod.stock !== undefined && prod.stock <= 0) return;
+        if (delta > 0 && prod.stock !== undefined && item.quantity + delta > prod.stock) return;
+
         const newQty = Math.max(1, item.quantity + delta);
 
         if (isUser) {
@@ -105,7 +110,7 @@ const CartSidebar: React.FC<CartSidebarProps> = ({ activeTab, setActiveTab }) =>
                 fetchCartAndWishlist();
             } catch (err) { }
         } else {
-            const newItems = cartItems.map(i => i.product._id === productId ? { ...i, quantity: newQty } : i);
+            const newItems = cartItems.map(i => (i.product?._id === productId || i.product === productId) ? { ...i, quantity: newQty } : i);
             setCartItems(newItems);
             localStorage.setItem('offlineCart', JSON.stringify(newItems));
             window.dispatchEvent(new Event('cart-updated'));
@@ -142,6 +147,7 @@ const CartSidebar: React.FC<CartSidebarProps> = ({ activeTab, setActiveTab }) =>
 
     const validCartItems = cartItems.filter(item => item && item.product);
     const cartSubtotal = validCartItems.reduce((acc, item) => acc + ((item.product?.price || 0) * (item.quantity || 1)), 0);
+    const hasInvalidItems = validCartItems.some(i => !i.product || i.product.isActive === false || (i.product.stock !== undefined && (i.product.stock <= 0 || i.quantity > i.product.stock)));
 
     return (
         <div className="offcanvas dz-offcanvas offcanvas-end" tabIndex={-1} id="offcanvasRight" style={{ width: '450px' }}>
@@ -187,20 +193,50 @@ const CartSidebar: React.FC<CartSidebarProps> = ({ activeTab, setActiveTab }) =>
                             <ul className="sidebar-cart-list" style={{ listStyle: 'none', padding: 0, margin: 0 }}>
                                 {activeTab === 'cart' ? validCartItems.map((item, idx) => {
                                     const prod = item.product;
+                                    const isItemDisabled = prod.isActive === false || (prod.stock !== undefined && prod.stock <= 0);
+                                    const isAtMaxStock = prod.stock !== undefined && item.quantity >= prod.stock;
+
                                     return (
                                         <li key={prod?._id || `cart-item-${idx}`} style={{ padding: '20px 0', borderBottom: '1px solid #E5E5E5', display: 'flex', alignItems: 'center', position: 'relative' }}>
                                             <div className="dz-media me-4" style={{ background: '#EBF1ED', width: '90px', height: '105px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                                                 <img src={prod.images?.[0] || product1} alt={prod.productName} style={{ maxWidth: '80%', maxHeight: '80%' }} />
                                             </div>
                                             <div className="cart-content flex-grow-1">
-                                                <h6 className="title" style={{ fontFamily: "'Marcellus', serif", fontSize: '18px', fontWeight: '400', color: '#2D2E2F', marginBottom: '10px' }}>
+                                                <h6 className="title" style={{ fontFamily: "'Marcellus', serif", fontSize: '18px', fontWeight: '400', color: '#2D2E2F', marginBottom: '6px' }}>
                                                     <Link to={`/product/${prod._id}`}>{prod.productName}</Link>
                                                 </h6>
+
+                                                {/* Stock Status Badge */}
+                                                <div className="mb-2">
+                                                    {prod.isActive === false ? (
+                                                        <span className="badge bg-danger text-white" style={{ fontSize: '10px' }}>Unavailable</span>
+                                                    ) : prod.stock !== undefined && prod.stock <= 0 ? (
+                                                        <span className="badge bg-danger text-white" style={{ fontSize: '10px' }}>Out of Stock</span>
+                                                    ) : prod.stock !== undefined && item.quantity > prod.stock ? (
+                                                        <span className="badge bg-warning text-dark" style={{ fontSize: '10px' }}>Only {prod.stock} left</span>
+                                                    ) : prod.stock !== undefined && prod.stock <= 10 ? (
+                                                        <span className="badge bg-warning text-dark" style={{ fontSize: '10px' }}>Low Stock ({prod.stock})</span>
+                                                    ) : null}
+                                                </div>
+
                                                 <div className="d-flex align-items-center">
                                                     <div className="d-flex align-items-center" style={{ border: '1px solid #D9D9D9' }}>
                                                         <button onClick={() => updateQty(prod._id, -1)} type="button" style={{ width: '30px', height: '30px', background: '#fff', border: 'none', fontSize: '18px', color: '#333' }}>-</button>
                                                         <input type="text" readOnly value={item.quantity} style={{ width: '35px', height: '30px', borderLeft: '1px solid #D9D9D9', borderRight: '1px solid #D9D9D9', borderTop: 'none', borderBottom: 'none', textAlign: 'center', fontSize: '14px', background: '#F8FBF9', color: '#2D2E2F' }} />
-                                                        <button onClick={() => updateQty(prod._id, 1)} type="button" style={{ width: '30px', height: '30px', background: '#fff', border: 'none', fontSize: '18px', color: '#333' }}>+</button>
+                                                        <button
+                                                            disabled={isItemDisabled || isAtMaxStock}
+                                                            onClick={() => updateQty(prod._id, 1)}
+                                                            type="button"
+                                                            style={{
+                                                                width: '30px',
+                                                                height: '30px',
+                                                                background: '#fff',
+                                                                border: 'none',
+                                                                fontSize: '18px',
+                                                                color: (isItemDisabled || isAtMaxStock) ? '#ccc' : '#333',
+                                                                cursor: (isItemDisabled || isAtMaxStock) ? 'not-allowed' : 'pointer'
+                                                            }}
+                                                        >+</button>
                                                     </div>
                                                     <h6 className="dz-price" style={{ fontSize: '18px', fontWeight: '500', color: '#2D2E2F', marginLeft: '15px', marginBottom: 0 }}>
                                                         ₹{prod.price?.toFixed(2)}
@@ -211,7 +247,7 @@ const CartSidebar: React.FC<CartSidebarProps> = ({ activeTab, setActiveTab }) =>
                                                 <i className="fa-solid fa-xmark"></i>
                                             </a>
                                         </li>
-                                    )
+                                    );
                                 }) : wishlistItems.filter(p => p).map((prod, idx) => (
                                     <li key={prod._id || `wish-${idx}`} style={{ padding: '25px 0', borderBottom: '1px solid #E5E5E5', display: 'flex', alignItems: 'center', position: 'relative' }}>
                                         <div className="dz-media me-4" style={{ background: '#EBF1ED', width: '90px', height: '105px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -256,7 +292,18 @@ const CartSidebar: React.FC<CartSidebarProps> = ({ activeTab, setActiveTab }) =>
                                             </div>
                                         </div>
                                     </div>
-                                    <button onClick={() => handleNavigate('/checkout')} className="btn btn-outline-secondary btn-block w-100 mb-2">Checkout</button>
+                                    <button
+                                        onClick={() => {
+                                            if (hasInvalidItems) {
+                                                handleNavigate('/shop-cart');
+                                            } else {
+                                                handleNavigate('/checkout');
+                                            }
+                                        }}
+                                        className="btn btn-outline-secondary btn-block w-100 mb-2"
+                                    >
+                                        Checkout
+                                    </button>
                                     <button onClick={() => handleNavigate('/shop-cart')} className="btn btn-secondary btn-block w-100">View Cart</button>
                                 </>
                             ) : (

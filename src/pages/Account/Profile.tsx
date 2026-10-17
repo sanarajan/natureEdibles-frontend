@@ -8,6 +8,7 @@ import 'cropperjs/dist/cropper.css';
 import { X, Crop } from 'lucide-react';
 import userApiClient from '../../services/userApiClient';
 import { userLoginSuccess, userLogout } from '../../store/authSlice';
+import { userAuthService } from '../../services/user/userAuthService';
 
 // Asset Imports
 import bg1 from '../../assets/images/organic/authentic-organic-staples-79.jpeg';
@@ -139,9 +140,14 @@ const Profile: React.FC = () => {
 
                 // If password was changed, force logout
                 if (payload.password) {
+                    try {
+                        await userAuthService.logout();
+                    } catch (err) {
+                        console.error('Logout error:', err);
+                    }
                     dispatch(userLogout());
                     toast.info("Password updated successfully. Please login again.");
-                    navigate('/login');
+                    navigate('/login', { replace: true });
                 }
             }
         } catch (error: any) {

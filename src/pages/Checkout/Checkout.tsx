@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import userApiClient from '../../services/userApiClient';
@@ -15,6 +15,17 @@ const Checkout: React.FC = () => {
     const navigate = useNavigate();
     const [paymentMethod, setPaymentMethod] = useState('Manual UPI');
     const [cartItems, setCartItems] = useState<any[]>([]);
+
+    const hasInvalidItems = useMemo(() => {
+        return cartItems.some((item: any) => {
+            const prod = item.product;
+            if (!prod) return true;
+            if (prod.isActive === false) return true;
+            if (prod.stock !== undefined && prod.stock <= 0) return true;
+            if (prod.stock !== undefined && item.quantity > prod.stock) return true;
+            return false;
+        });
+    }, [cartItems]);
     const [subtotal, setSubtotal] = useState(0);
     const [shipping, setShipping] = useState(0);
     const [total, setTotal] = useState(0);
@@ -432,6 +443,11 @@ const Checkout: React.FC = () => {
             return;
         }
 
+        if (hasInvalidItems) {
+            toast.error("Some items in your cart are unavailable or out of stock. Please return to your cart and update them.");
+            return;
+        }
+
         try {
             const orderData: any = {
                 addressId: selectedAddressId,
@@ -672,6 +688,20 @@ const Checkout: React.FC = () => {
                         <div className="col-xl-4 side-bar">
                             <h4 className="title m-b15">Your Order</h4>
                             <div className="order-detail sticky-top">
+                                {hasInvalidItems && (
+                                    <div className="alert alert-danger p-3 mb-3" style={{ borderRadius: '8px', fontSize: '13px' }}>
+                                        <div className="d-flex align-items-center mb-1">
+                                            <i className="fas fa-exclamation-triangle me-2 fs-6"></i>
+                                            <strong>Stock & Availability Notice</strong>
+                                        </div>
+                                        <p className="mb-2" style={{ fontSize: '12px' }}>
+                                            Some items in your cart are currently out of stock, inactive, or exceed available stock.
+                                        </p>
+                                        <Link to="/shop-cart" className="btn btn-sm btn-danger w-100" style={{ fontSize: '12px', padding: '5px' }}>
+                                            Return to Cart to adjust items
+                                        </Link>
+                                    </div>
+                                )}
                                 {(() => {
                                     // Group combo-split items by productId for clean display
                                     const grouped: Record<string, { product: any; totalQty: number }> = {};
@@ -686,6 +716,17 @@ const Checkout: React.FC = () => {
                                             <div className="dz-media"><img src={g.product?.images?.[0] || product1} alt="Product" /></div>
                                             <div className="dz-content">
                                                 <h6 className="title mb-0">{g.product?.productName} <span className="text-secondary">x{g.totalQty}</span></h6>
+                                                <div className="mt-1">
+                                                    {g.product?.isActive === false ? (
+                                                        <span className="badge bg-danger text-white" style={{ fontSize: '10px' }}>Unavailable</span>
+                                                    ) : g.product?.stock !== undefined && g.product.stock <= 0 ? (
+                                                        <span className="badge bg-danger text-white" style={{ fontSize: '10px' }}>Out of Stock</span>
+                                                    ) : g.product?.stock !== undefined && g.totalQty > g.product.stock ? (
+                                                        <span className="badge bg-warning text-dark" style={{ fontSize: '10px' }}>Only {g.product.stock} available</span>
+                                                    ) : g.product?.stock !== undefined && g.product.stock <= 10 ? (
+                                                        <span className="badge bg-warning text-dark" style={{ fontSize: '10px' }}>Low Stock ({g.product.stock} left)</span>
+                                                    ) : null}
+                                                </div>
                                                 <span className="price">₹{((g.product?.price || 0) * g.totalQty).toFixed(2)}</span>
                                             </div>
                                         </div>
@@ -817,7 +858,20 @@ const Checkout: React.FC = () => {
                                         )}
                                     </div>
                                 </div>
-                                <button onClick={handlePlaceOrder} disabled={cartItems.length === 0 || !selectedAddressId || selectedAddressId === 'new' || isChanging || showNewAddressForm || !!editingAddressId} className="btn btn-outline-secondary btn-lg w-100 mt-4">PLACE ORDER</button>
+                                <button
+                                    onClick={handlePlaceOrder}
+                                    disabled={cartItems.length === 0 || hasInvalidItems || !selectedAddressId || selectedAddressId === 'new' || isChanging || showNewAddressForm || !!editingAddressId}
+                                    className="btn btn-outline-secondary btn-lg w-100 mt-4"
+                                    style={hasInvalidItems ? { opacity: 0.6, cursor: 'not-allowed' } : {}}
+                                >
+                                    PLACE ORDER
+                                </button>
+                                {hasInvalidItems && (
+                                    <div className="text-danger small mt-2 text-center" style={{ fontWeight: '500' }}>
+                                        <i className="fas fa-exclamation-circle me-1"></i>
+                                        Please update unavailable items in your cart before placing order.
+                                    </div>
+                                )}
                             </div>
                         </div>
                     </div>

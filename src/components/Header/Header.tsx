@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
+import { userLogout } from '../../store/authSlice';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 const logo = '/images/logo.jpeg';
@@ -14,6 +15,7 @@ const Header: React.FC = () => {
     const [isHeaderSticky, setIsHeaderSticky] = useState(false);
     const location = useLocation();
     const navigate = useNavigate();
+    const dispatch = useDispatch();
 
     // Only Home page (/) gets the transparent header
     const isHome = location.pathname === '/';
@@ -27,7 +29,7 @@ const Header: React.FC = () => {
         try { localUser = JSON.parse(localUserStr); } catch (e) {}
     }
     const hasLocalUserRole = localUser ? (localUser.role === 'user' || localUser.role === 'USER' || !localUser.role) : false;
-    const isLoggedIn = isLoggedInLocal || reduxIsAuthenticated || hasLocalUserRole;
+    const isLoggedIn = Boolean(reduxIsAuthenticated || (isLoggedInLocal && (localUser ? hasLocalUserRole : true)));
     const [cartCount, setCartCount] = useState(0);
     const [wishlistCount, setWishlistCount] = useState(0);
     const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -206,10 +208,15 @@ const Header: React.FC = () => {
         } catch (err) {
             console.error('Logout error:', err);
         }
-        localStorage.removeItem('user_accessToken');
-        localStorage.removeItem('user_data');
+        dispatch(userLogout());
         setIsLoggedInLocal(false);
-        navigate('/login');
+        setCartCount(0);
+        setWishlistCount(0);
+        setNotifications([]);
+        setUnreadNotificationCount(0);
+        window.dispatchEvent(new Event('cart-updated'));
+        window.dispatchEvent(new Event('wishlist-updated'));
+        navigate('/login', { replace: true });
         toast.success("Successfully logged out", { position: "top-right", autoClose: 3000 });
     };
     const handleNotificationClick = async (notification: Notification) => {

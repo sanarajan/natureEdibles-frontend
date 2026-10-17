@@ -106,10 +106,57 @@ const AdminProducts: React.FC = () => {
         });
     };
 
-    const getStatusBadge = (stock: number) => {
-        if (stock === 0) return <span className="admin-badge badge-danger">Out of Stock</span>;
+    const handleToggleStatus = async (productId: string, currentStatus: boolean) => {
+        try {
+            const newStatus = !currentStatus;
+            setProducts(prev => prev.map(p =>
+                p._id === productId ? { ...p, isActive: newStatus } : p
+            ));
+
+            const res = await apiClient.patch(`/admin/products/${productId}/status`, { isActive: newStatus });
+            if (res.data.success) {
+                toast.success(`Product marked as ${newStatus ? 'Active' : 'Inactive'}`);
+            } else {
+                fetchProducts();
+                toast.error('Failed to update status');
+            }
+        } catch (err: any) {
+            fetchProducts();
+            toast.error(err.response?.data?.message || 'Error updating status');
+        }
+    };
+
+    const getStockStatusBadge = (stock: number) => {
+        if (stock <= 0) return <span className="admin-badge badge-danger">Out of Stock</span>;
         if (stock <= 10) return <span className="admin-badge badge-warning">Low Stock</span>;
-        return <span className="admin-badge badge-success">Active</span>;
+        return <span className="admin-badge badge-success">In Stock</span>;
+    };
+
+    const getActiveBadge = (product: any) => {
+        const isActive = product.isActive !== false;
+        return (
+            <button
+                type="button"
+                onClick={() => handleToggleStatus(product._id, isActive)}
+                style={{
+                    background: 'transparent',
+                    border: 'none',
+                    padding: 0,
+                    cursor: 'pointer'
+                }}
+                title={`Click to mark as ${isActive ? 'Inactive' : 'Active'}`}
+            >
+                {isActive ? (
+                    <span className="admin-badge badge-success" style={{ cursor: 'pointer' }}>
+                        Active
+                    </span>
+                ) : (
+                    <span className="admin-badge badge-danger" style={{ cursor: 'pointer', background: '#fee2e2', color: '#991b1b' }}>
+                        Inactive
+                    </span>
+                )}
+            </button>
+        );
     };
 
     const filteredProducts = products.filter(p =>
@@ -160,8 +207,9 @@ const AdminProducts: React.FC = () => {
                                 <th>SKU</th>
                                 <th>Category</th>
                                 <th>Price</th>
+                                <th>Active Status</th>
                                 <th>Stock</th>
-                                <th>Status</th>
+                                <th>Stock Status</th>
                                 <th>Highlights</th>
                                 <th>Created At</th>
                                 <th>Actions</th>
@@ -170,11 +218,11 @@ const AdminProducts: React.FC = () => {
                         <tbody>
                             {loading ? (
                                 <tr>
-                                    <td colSpan={8} style={{ textAlign: 'center', padding: '2rem' }}>Loading products...</td>
+                                    <td colSpan={10} style={{ textAlign: 'center', padding: '2rem' }}>Loading products...</td>
                                 </tr>
                             ) : displayedProducts.length === 0 ? (
                                 <tr>
-                                    <td colSpan={8} style={{ textAlign: 'center', padding: '2rem' }}>No products found</td>
+                                    <td colSpan={10} style={{ textAlign: 'center', padding: '2rem' }}>No products found</td>
                                 </tr>
                             ) : (
                                 displayedProducts.map((product) => (
@@ -197,8 +245,9 @@ const AdminProducts: React.FC = () => {
                                         <td><code style={{ fontSize: '0.8rem', background: '#f1f5f9', padding: '2px 6px', borderRadius: '4px' }}>{product.sku || 'N/A'}</code></td>
                                         <td>{product.categoryId?.categoryName || 'N/A'}</td>
                                         <td>₹{product.price.toFixed(2)}</td>
+                                        <td>{getActiveBadge(product)}</td>
                                         <td>{product.stock} items</td>
-                                        <td>{getStatusBadge(product.stock)}</td>
+                                        <td>{getStockStatusBadge(product.stock)}</td>
                                         <td>
                                             <div className="d-flex gap-2">
                                                 <button
@@ -344,8 +393,12 @@ const AdminProducts: React.FC = () => {
                                             <span>{formatDate(selectedProduct.createdAt)}</span>
                                         </div>
                                         <div className="stat-item">
-                                            <label>Status</label>
-                                            <span>{selectedProduct.stock > 0 ? 'ACTIVE' : 'OUT OF STOCK'}</span>
+                                            <label>Active Status</label>
+                                            <span>{selectedProduct.isActive !== false ? 'ACTIVE' : 'INACTIVE'}</span>
+                                        </div>
+                                        <div className="stat-item">
+                                            <label>Stock Status</label>
+                                            <span>{selectedProduct.stock <= 0 ? 'OUT OF STOCK' : selectedProduct.stock <= 10 ? 'LOW STOCK' : 'IN STOCK'}</span>
                                         </div>
                                     </div>
 

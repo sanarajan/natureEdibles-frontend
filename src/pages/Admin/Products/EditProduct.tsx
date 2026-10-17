@@ -42,6 +42,7 @@ const EditProduct: React.FC = () => {
     const [isPopular, setIsPopular] = useState(false);
     const [isTrending, setIsTrending] = useState(false);
     const [isBestSeller, setIsBestSeller] = useState(false);
+    const [isActive, setIsActive] = useState(true);
 
     // Image states
     const [images, setImages] = useState<string[]>([]); // Base64 strings or URLs
@@ -103,6 +104,7 @@ const EditProduct: React.FC = () => {
                 setIsPopular(product.isPopular || false);
                 setIsTrending(product.isTrending || false);
                 setIsBestSeller(product.isBestSeller || false);
+                setIsActive(product.isActive !== false);
 
                 if (product.specifications && Object.keys(product.specifications).length > 0) {
                     const specs = Object.entries(product.specifications).map(([key, value]) => ({
@@ -206,7 +208,8 @@ const EditProduct: React.FC = () => {
             featured,
             isPopular,
             isTrending,
-            isBestSeller
+            isBestSeller,
+            isActive
         };
 
         setSaving(true);
@@ -344,7 +347,16 @@ const EditProduct: React.FC = () => {
                                 />
                             </div>
                             <div className="col-md-6 mb-4">
-                                <label className="form-label" style={{ fontWeight: 600 }}>Inventory Stock *</label>
+                                <label className="form-label" style={{ fontWeight: 600 }}>
+                                    Inventory Stock *
+                                    {stock !== '' && !isNaN(Number(stock)) && (
+                                        Number(stock) <= 0 
+                                            ? <span className="admin-badge badge-danger ms-2">Out of Stock</span>
+                                            : Number(stock) <= 10 
+                                                ? <span className="admin-badge badge-warning ms-2">Low Stock</span>
+                                                : <span className="admin-badge badge-success ms-2">In Stock</span>
+                                    )}
+                                </label>
                                 <input
                                     type="number"
                                     min="0"
@@ -440,6 +452,30 @@ const EditProduct: React.FC = () => {
                                 </div>
                             ))}
                         </div>
+                    </div>
+
+                    <div className="admin-card mb-4" style={{ padding: '24px' }}>
+                        <h5 className="mb-3" style={{ fontWeight: 600 }}>Active Status</h5>
+                        <p style={{ fontSize: '0.85rem', color: '#64748b', marginBottom: '16px' }}>
+                            Control whether this product is active in the shop:
+                        </p>
+                        <label className="d-flex align-items-center mb-0" style={{ cursor: 'pointer', padding: '12px', border: '1px solid #e2e8f0', borderRadius: '10px', backgroundColor: isActive ? '#f0fdf4' : '#fef2f2', borderColor: isActive ? 'var(--admin-primary)' : '#f87171' }}>
+                            <input
+                                type="checkbox"
+                                className="form-check-input"
+                                checked={isActive}
+                                onChange={(e) => setIsActive(e.target.checked)}
+                                style={{ width: '18px', height: '18px', marginTop: 0 }}
+                            />
+                            <div className="ms-2">
+                                <span style={{ fontWeight: 600, color: isActive ? 'var(--admin-primary-dark)' : '#b91c1c' }}>
+                                    {isActive ? 'Active (Visible in Store)' : 'Inactive (Hidden from Store)'}
+                                </span>
+                                <div style={{ fontSize: '0.75rem', color: '#64748b' }}>
+                                    {isActive ? 'Eligible for purchase subject to stock availability' : 'Product cannot be purchased or viewed by customers'}
+                                </div>
+                            </div>
+                        </label>
                     </div>
 
                     <div className="admin-card mb-4" style={{ padding: '24px' }}>

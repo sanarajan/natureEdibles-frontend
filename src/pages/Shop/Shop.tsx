@@ -55,6 +55,8 @@ interface Product {
     offerPrice?: number;
     appliedOffer?: any;
     images: string[];
+    stock?: number;
+    isActive?: boolean;
     featured?: boolean;
     isPopular?: boolean;
     isTrending?: boolean;
@@ -64,9 +66,22 @@ interface Product {
     subcategoryId?: { _id: string; subcategoryName: string };
 }
 
+export const getStockInfo = (stock?: number) => {
+    if (stock === undefined || stock <= 0) {
+        return { label: 'Out of Stock', isOutOfStock: true, isLowStock: false, badgeClass: 'bg-danger text-white' };
+    }
+    if (stock <= 10) {
+        return { label: `Low Stock (${stock} left)`, isOutOfStock: false, isLowStock: true, badgeClass: 'bg-warning text-dark' };
+    }
+    return { label: 'In Stock', isOutOfStock: false, isLowStock: false, badgeClass: 'bg-success text-white' };
+};
+
 // ── Quick View Modal ──────────────────────────────────────────
 const QuickViewModal = ({ prod, onClose, inWishlist, onToggleWishlist, handleAddToCart }: { prod: Product; onClose: () => void; inWishlist: boolean; onToggleWishlist: (p: Product, redirect?: boolean) => void; handleAddToCart: (prod: Product, quantity?: number, redirect?: boolean) => void }) => {
     const [qty, setQty] = useState(1);
+    const stockInfo = getStockInfo(prod.stock);
+    const isOutOfStock = stockInfo.isOutOfStock;
+
     return (
         <div
             style={{ position: 'fixed', inset: 0, zIndex: 9999, background: 'rgba(0,0,0,0.55)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
@@ -101,6 +116,9 @@ const QuickViewModal = ({ prod, onClose, inWishlist, onToggleWishlist, handleAdd
                         <StarRating count={4} />
                         <span style={{ color: '#444', fontSize: '14px' }}>4.7 Rating</span>
                         <span style={{ color: '#888', fontSize: '14px' }}>(150 customer reviews)</span>
+                        <span className={`badge ${stockInfo.badgeClass}`} style={{ fontSize: '12px', padding: '4px 8px', borderRadius: '4px' }}>
+                            {stockInfo.label}
+                        </span>
                     </div>
 
                     <p style={{ margin: 0, fontSize: '15px', color: '#555', lineHeight: '1.6' }}>
@@ -120,17 +138,43 @@ const QuickViewModal = ({ prod, onClose, inWishlist, onToggleWishlist, handleAdd
                         <div>
                             <div style={{ fontSize: '15px', fontWeight: 600, color: '#1a1a1a', marginBottom: '8px' }}>Quantity</div>
                             <div style={{ display: 'flex', alignItems: 'center' }}>
-                                <button onClick={() => setQty(q => Math.max(1, q - 1))} style={{ width: '38px', height: '38px', border: '1px solid #333', background: '#333', color: '#fff', fontSize: '18px', cursor: 'pointer' }}>−</button>
-                                <span style={{ width: '42px', height: '38px', border: '1px solid #e8e8e8', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '15px' }}>{qty}</span>
-                                <button onClick={() => setQty(q => q + 1)} style={{ width: '38px', height: '38px', border: '1px solid #333', background: '#333', color: '#fff', fontSize: '18px', cursor: 'pointer' }}>+</button>
+                                <button
+                                    onClick={() => setQty(q => Math.max(1, q - 1))}
+                                    disabled={isOutOfStock}
+                                    style={{ width: '38px', height: '38px', border: '1px solid #333', background: '#333', color: '#fff', fontSize: '18px', cursor: isOutOfStock ? 'not-allowed' : 'pointer' }}
+                                >−</button>
+                                <span style={{ width: '42px', height: '38px', border: '1px solid #e8e8e8', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '15px' }}>{isOutOfStock ? 0 : qty}</span>
+                                <button
+                                    onClick={() => setQty(q => (prod.stock !== undefined ? Math.min(prod.stock, q + 1) : q + 1))}
+                                    disabled={isOutOfStock || (prod.stock !== undefined && qty >= prod.stock)}
+                                    style={{ width: '38px', height: '38px', border: '1px solid #333', background: '#333', color: '#fff', fontSize: '18px', cursor: (isOutOfStock || (prod.stock !== undefined && qty >= prod.stock)) ? 'not-allowed' : 'pointer' }}
+                                >+</button>
                             </div>
                         </div>
                     </div>
 
                     <div style={{ display: 'flex', gap: '15px', marginTop: '15px' }}>
                         <button
-                            onClick={() => { handleAddToCart(prod, qty, true); onClose(); }}
-                            style={{ background: '#222', color: '#fff', border: 'none', padding: '14px 40px', fontSize: '14px', fontWeight: 700, borderRadius: '2px', cursor: 'pointer' }}>ADD TO CART</button>
+                            disabled={isOutOfStock}
+                            onClick={() => {
+                                if (!isOutOfStock) {
+                                    handleAddToCart(prod, qty, true);
+                                    onClose();
+                                }
+                            }}
+                            style={{
+                                background: isOutOfStock ? '#94a3b8' : '#222',
+                                color: '#fff',
+                                border: 'none',
+                                padding: '14px 40px',
+                                fontSize: '14px',
+                                fontWeight: 700,
+                                borderRadius: '2px',
+                                cursor: isOutOfStock ? 'not-allowed' : 'pointer'
+                            }}
+                        >
+                            {isOutOfStock ? 'OUT OF STOCK' : 'ADD TO CART'}
+                        </button>
                         <button
                             onClick={() => onToggleWishlist(prod, false)}
                             style={{ background: '#fff', color: '#222', border: '1px solid #222', padding: '14px 20px', fontSize: '14px', fontWeight: 700, borderRadius: '2px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}
@@ -294,6 +338,16 @@ const Shop: React.FC = () => {
     };
 
     const handleAddToCart = async (prod: Product, quantity: number = 1, redirect: boolean = false) => {
+        if (prod.isActive === false) {
+            toast.error('This product is currently inactive and cannot be purchased.');
+            return;
+        }
+
+        if (prod.stock !== undefined && prod.stock <= 0) {
+            toast.error(`Sorry, '${prod.productName}' is currently out of stock.`);
+            return;
+        }
+
         if (isUser) {
             try {
                 const res = await userApiClient.post('/user/cart/toggle', { productId: prod._id, quantity });
@@ -302,7 +356,8 @@ const Shop: React.FC = () => {
                     window.dispatchEvent(new Event('cart-updated'));
                 }
             } catch (err: any) {
-                toast.error('Failed to update cart');
+                const errMsg = err.response?.data?.message || 'Failed to update cart';
+                toast.error(errMsg);
                 return;
             }
         } else {
@@ -318,8 +373,16 @@ const Shop: React.FC = () => {
             }
 
             const existsIndex = offlineItems.findIndex(p => p.product._id === prod._id);
+            const currentQty = existsIndex > -1 ? offlineItems[existsIndex].quantity : 0;
+            const newTotalQty = currentQty + quantity;
+
+            if (prod.stock !== undefined && newTotalQty > prod.stock) {
+                toast.error(`Only ${prod.stock} units of '${prod.productName}' are available in stock.`);
+                return;
+            }
+
             if (existsIndex > -1) {
-                offlineItems[existsIndex].quantity += quantity;
+                offlineItems[existsIndex].quantity = newTotalQty;
                 toast.success('Cart updated');
             } else {
                 offlineItems.push({ product: prod, quantity });
@@ -676,6 +739,7 @@ const Shop: React.FC = () => {
                                                 : viewMode === 'column'
                                                     ? 'col-12 col-xl-4 col-lg-4 col-md-6 col-sm-6'
                                                     : 'col-12 col-xl-3 col-lg-4 col-md-6 col-sm-6';
+                                            const stockInfo = getStockInfo(prod.stock);
 
                                             return (
                                                 <div key={prod._id} className={colClass}>
@@ -690,7 +754,10 @@ const Shop: React.FC = () => {
                                                             <div className="dz-content">
                                                                 <div className="dz-header">
                                                                     <div>
-                                                                        <h4 className="title mb-0"><Link to={`/product/${prod._id}`}>{prod.productName}</Link></h4>
+                                                                        <h4 className="title mb-0">
+                                                                            <Link to={`/product/${prod._id}`}>{prod.productName}</Link>
+                                                                            <span className={`badge ${stockInfo.badgeClass} ms-2`} style={{ fontSize: '11px', padding: '3px 7px', fontWeight: 600 }}>{stockInfo.label}</span>
+                                                                        </h4>
                                                                         <ul className="dz-tags"><li><a href="javascript:void(0);">{prod.categoryId?.categoryName}</a></li></ul>
                                                                     </div>
                                                                     <div className="review-num"><StarRating count={4} /><span> 150 Review</span></div>
@@ -709,7 +776,11 @@ const Shop: React.FC = () => {
                                                                             </div>
                                                                         </div>
                                                                         <div className="d-flex">
-                                                                            <Link to="#" onClick={(e) => { e.preventDefault(); handleAddToCart(prod, 1, true); }} className="btn btn-secondary btn-md btn-icon">Add to cart</Link>
+                                                                            {stockInfo.isOutOfStock ? (
+                                                                                <span className="btn btn-secondary btn-md btn-icon" style={{ background: '#94a3b8', borderColor: '#94a3b8', cursor: 'not-allowed', opacity: 0.8 }}>Out of Stock</span>
+                                                                            ) : (
+                                                                                <Link to="#" onClick={(e) => { e.preventDefault(); handleAddToCart(prod, 1, true); }} className="btn btn-secondary btn-md btn-icon">Add to cart</Link>
+                                                                            )}
                                                                             <div className="bookmark-btn style-1" onClick={() => handleToggleWishlist(prod)}>
                                                                                 <input className="form-check-input" type="checkbox" id={`fav-${prod._id}`} checked={wishlist.includes(prod._id)} readOnly />
                                                                                 <label className="form-check-label" htmlFor={`fav-${prod._id}`}><HeartSVG filled={wishlist.includes(prod._id)} /></label>
@@ -725,10 +796,12 @@ const Shop: React.FC = () => {
                                                         <div className="shop-card">
                                                             <div className="dz-media media-overlay">
                                                                 <img src={prod.images && prod.images.length > 0 ? prod.images[0] : product1} alt={prod.productName} />
-                                                                {(prod.featured || prod.isBestSeller) && (
+                                                                {(prod.featured || prod.isBestSeller || stockInfo.isOutOfStock || stockInfo.isLowStock) && (
                                                                     <div className="shop-badge-wrap">
                                                                         {prod.featured && <span className="shop-featured-badge">FEATURED</span>}
                                                                         {prod.isBestSeller && <span className="shop-offer-badge">BEST SELLER</span>}
+                                                                        {stockInfo.isOutOfStock && <span className="shop-offer-badge" style={{ background: '#dc3545' }}>OUT OF STOCK</span>}
+                                                                        {stockInfo.isLowStock && <span className="shop-offer-badge" style={{ background: '#eab308', color: '#000' }}>LOW STOCK</span>}
                                                                     </div>
                                                                 )}
                                                                 <div className="shop-meta">
@@ -739,18 +812,31 @@ const Shop: React.FC = () => {
                                                                     >
                                                                         <HeartSVG filled={wishlist.includes(prod._id)} />
                                                                     </button>
-                                                                    <Link to="#" onClick={(e) => { e.preventDefault(); handleAddToCart(prod, 1, true); }} className="btn btn-primary meta-icon dz-carticon"><i className="flaticon-shopping-cart-1"></i></Link>
+                                                                    {stockInfo.isOutOfStock ? (
+                                                                        <span className="btn btn-secondary meta-icon dz-carticon" style={{ cursor: 'not-allowed', opacity: 0.6 }} title="Out of Stock"><i className="flaticon-shopping-cart-1"></i></span>
+                                                                    ) : (
+                                                                        <Link to="#" onClick={(e) => { e.preventDefault(); handleAddToCart(prod, 1, true); }} className="btn btn-primary meta-icon dz-carticon"><i className="flaticon-shopping-cart-1"></i></Link>
+                                                                    )}
                                                                 </div>
                                                             </div>
                                                             <div className="dz-content">
                                                                 <h5 className="title"><Link to={`/product/${prod._id}`}>{prod.productName}</Link></h5>
-                                                                <h6 className="price">
-                                                                    ₹{prod.offerPrice ? prod.offerPrice.toFixed(2) : prod.price.toFixed(2)}
-                                                                    {prod.offerPrice && prod.offerPrice < prod.price && (
-                                                                        <del className="ms-2 text-muted" style={{ fontSize: '0.85em' }}>₹{prod.price.toFixed(2)}</del>
+                                                                <div className="d-flex align-items-center justify-content-between">
+                                                                    <h6 className="price mb-0">
+                                                                        ₹{prod.offerPrice ? prod.offerPrice.toFixed(2) : prod.price.toFixed(2)}
+                                                                        {prod.offerPrice && prod.offerPrice < prod.price && (
+                                                                            <del className="ms-2 text-muted" style={{ fontSize: '0.85em' }}>₹{prod.price.toFixed(2)}</del>
+                                                                        )}
+                                                                    </h6>
+                                                                    <span className={`badge ${stockInfo.badgeClass}`} style={{ fontSize: '10px', padding: '3px 6px' }}>{stockInfo.label}</span>
+                                                                </div>
+                                                                <div className="shop-cart-btn">
+                                                                    {stockInfo.isOutOfStock ? (
+                                                                        <span style={{ cursor: 'not-allowed', opacity: 0.5 }} title="Out of Stock"><CartBasketSVG /></span>
+                                                                    ) : (
+                                                                        <Link to="#" onClick={(e) => { e.preventDefault(); handleAddToCart(prod, 1, true); }}><CartBasketSVG /></Link>
                                                                     )}
-                                                                </h6>
-                                                                <div className="shop-cart-btn"><Link to="#" onClick={(e) => { e.preventDefault(); handleAddToCart(prod, 1, true); }}><CartBasketSVG /></Link></div>
+                                                                </div>
                                                             </div>
                                                         </div>
                                                     )}

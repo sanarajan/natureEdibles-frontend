@@ -9,6 +9,8 @@ export interface Product {
     sku: string;
     price: number;
     images: string[];
+    stock?: number;
+    isActive?: boolean;
     featured?: boolean;
     isPopular?: boolean;
     isTrending?: boolean;
@@ -36,6 +38,16 @@ export const handleAddToCartGlobal = async (
     navigate: (path: string) => void,
     redirect: boolean = false
 ) => {
+    if (prod.isActive === false) {
+        toast.error('This product is currently inactive and cannot be purchased.');
+        return;
+    }
+
+    if (prod.stock !== undefined && prod.stock <= 0) {
+        toast.error(`Sorry, '${prod.productName}' is currently out of stock.`);
+        return;
+    }
+
     if (isUser) {
         try {
             const res = await userApiClient.post(API_ENDPOINTS.USER.CART.TOGGLE, { productId: prod._id, quantity });
@@ -45,7 +57,8 @@ export const handleAddToCartGlobal = async (
                 window.dispatchEvent(new Event('cart-updated'));
             }
         } catch (err: any) {
-            toast.error('Failed to update cart');
+            const errMsg = err.response?.data?.message || 'Failed to update cart';
+            toast.error(errMsg);
             return;
         }
     } else {
@@ -61,8 +74,16 @@ export const handleAddToCartGlobal = async (
         }
 
         const existsIndex = offlineItems.findIndex(p => p.product._id === prod._id);
+        const currentQty = existsIndex > -1 ? offlineItems[existsIndex].quantity : 0;
+        const newTotalQty = currentQty + quantity;
+
+        if (prod.stock !== undefined && newTotalQty > prod.stock) {
+            toast.error(`Only ${prod.stock} units of '${prod.productName}' are available in stock.`);
+            return;
+        }
+
         if (existsIndex > -1) {
-            offlineItems[existsIndex].quantity += quantity;
+            offlineItems[existsIndex].quantity = newTotalQty;
             toast.success('Cart updated');
         } else {
             offlineItems.push({ product: prod, quantity });

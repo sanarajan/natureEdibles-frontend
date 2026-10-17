@@ -16,6 +16,8 @@ interface CartItem {
         _id: string;
         productName: string;
         price: number;
+        stock?: number;
+        isActive?: boolean;
         images?: string[];
         categoryId?: { categoryName: string; _id: string };
         subcategoryId?: { subcategoryName: string; _id: string };
@@ -96,6 +98,23 @@ const Cart: React.FC = () => {
         const currentQty = cartItems.filter((i: CartItem) => i.product._id === productId).reduce((acc, curr) => acc + curr.quantity, 0) || 1;
         const newQty = Math.max(1, currentQty + delta);
 
+        const target = cartItems.find((i: CartItem) => i.product?._id === productId);
+        if (target && target.product) {
+            const prod = target.product;
+            if (prod.isActive === false) {
+                toast.error('This product is currently inactive and cannot be purchased.');
+                return;
+            }
+            if (prod.stock !== undefined && prod.stock <= 0) {
+                toast.error(`Sorry, '${prod.productName}' is currently out of stock.`);
+                return;
+            }
+            if (delta > 0 && prod.stock !== undefined && currentQty + delta > prod.stock) {
+                toast.error(`Only ${prod.stock} units of '${prod.productName}' are available in stock.`);
+                return;
+            }
+        }
+
         if (isUser) {
             try {
                 const res = await userApiClient.put('/user/cart/update', { productId, quantity: newQty });
@@ -103,10 +122,15 @@ const Cart: React.FC = () => {
                     setCartItems(res.data.data.products);
                     setAppliedComboOffer(res.data.data.appliedComboOffer || null);
                 }
-            } catch (err) {
-                toast.error('Failed to update quantity');
+            } catch (err: any) {
+                const errMsg = err.response?.data?.message || 'Failed to update quantity';
+                toast.error(errMsg);
             }
         } else {
+            if (target && target.product?.stock !== undefined && newQty > target.product.stock) {
+                toast.error(`Only ${target.product.stock} units of '${target.product.productName}' are available in stock.`);
+                return;
+            }
             const localCart = JSON.parse(localStorage.getItem('offlineCart') || '[]');
             const newCart = localCart.map((i: any) => (i.product._id === productId || i.product === productId) ? { ...i, quantity: newQty } : i);
             localStorage.setItem('offlineCart', JSON.stringify(newCart));
@@ -162,6 +186,17 @@ const Cart: React.FC = () => {
         return Object.values(grouped);
     }, [cartItems]);
 
+    const hasInvalidItems = useMemo(() => {
+        return finalItems.some((item: any) => {
+            const prod = item.product;
+            if (!prod) return true;
+            if (prod.isActive === false) return true;
+            if (prod.stock !== undefined && prod.stock <= 0) return true;
+            if (prod.stock !== undefined && item.quantity > prod.stock) return true;
+            return false;
+        });
+    }, [finalItems]);
+
     const mrpSubtotal = finalItems.reduce((acc: number, item: any) => acc + (item.product?.price || 0) * (item.quantity || 0), 0);
     const totalIndividualDiscount = finalItems.reduce((acc: number, item: any) => {
         if (item.appliedProductOffer?.finalUnitPrice !== undefined && item.normalQty > 0) {
@@ -193,6 +228,14 @@ const Cart: React.FC = () => {
                 <div className="container">
                     <div className="row">
                         <div className="col-lg-9">
+                            {hasInvalidItems && (
+                                <div className="alert alert-warning d-flex align-items-center mb-3 p-3" role="alert" style={{ borderRadius: '8px', border: '1px solid #ffeeba', backgroundColor: '#fff3cd', color: '#856404' }}>
+                                    <i className="fa fa-exclamation-triangle me-2 fs-5"></i>
+                                    <div>
+                                        <strong>Cart Availability Notice:</strong> Some items in your cart are currently out of stock, inactive, or exceed available inventory. Please adjust quantities or remove unavailable items to continue.
+                                    </div>
+                                </div>
+                            )}
                             <div className="table-responsive pe-2">
                                 <table className="table check-tbl style-2 table-sm" style={{
                                     borderCollapse: 'separate',
@@ -235,11 +278,52 @@ const Cart: React.FC = () => {
                                                             <img src={imgUrl} alt={prod.productName} style={{ width: '60px', height: '60px', objectFit: 'cover' }} />
                                                         </td>
                                                         <td className="product-item-name py-1 px-1" style={{ maxWidth: '250px', whiteSpace: 'normal', fontSize: '14px' }}>
-                                                            <Link to={`/product/${prod._id}`}>{prod.productName}</Link>
+                                                            <div className="d-flex align-items-center flex-wrap gap-2 mb-1">
+                                                                <Link to={`/product/${prod._id}`}>{prod.productName}</Link>
+                                                                {prod.isActive === false ? (
+                                                                    <span className="badge bg-danger text-white" style={{ fontSize: '11px', padding: '3px 7px' }}>
+                                                                        <i className="fa fa-ban me-1"></i> Unavailable
+                                                                    </span>
+                                                                ) : prod.stock !== undefined && prod.stock <= 0 ? (
+                                                                    <span className="badge bg-danger text-white" style={{ fontSize: '11px', padding: '3px 7px' }}>
+                                                                        <i className="fa fa-times-circle me-1"></i> Out of Stock
+                                                                    </span>
+                                                                ) : prod.stock !== undefined && quantity > prod.stock ? (
+                                                                    <span className="badge bg-danger text-white" style={{ fontSize: '11px', padding: '3px 7px' }}>
+                                                                        <i className="fa fa-exclamation-triangle me-1"></i> Insufficient Stock
+                                                                    </span>
+                                                                ) : prod.stock !== undefined && prod.stock <= 10 ? (
+                                                                    <span className="badge bg-warning text-dark" style={{ fontSize: '11px', padding: '3px 7px' }}>
+                                                                        <i className="fa fa-info-circle me-1"></i> Low Stock ({prod.stock} left)
+                                                                    </span>
+                                                                ) : (
+                                                                    <span className="badge" style={{ fontSize: '11px', padding: '3px 7px', background: '#e8f5e9', color: '#2e7d32', border: '1px solid #c8e6c9' }}>
+                                                                        <i className="fa fa-check me-1"></i> In Stock
+                                                                    </span>
+                                                                )}
+                                                            </div>
                                                             <ul className="product-item-list">
                                                                 <li>Category: {prod.categoryId?.categoryName || 'N/A'}</li>
                                                                 {prod.subcategoryId && <li>Subcategory: {prod.subcategoryId.subcategoryName}</li>}
                                                             </ul>
+
+                                                            {/* Product-specific stock warnings */}
+                                                            {prod.isActive === false && (
+                                                                <div className="text-danger small mt-1" style={{ fontWeight: 600, fontSize: '12px' }}>
+                                                                    <i className="fa fa-ban me-1"></i> This product is currently unavailable. Please remove it from your cart.
+                                                                </div>
+                                                            )}
+                                                            {prod.isActive !== false && prod.stock !== undefined && prod.stock <= 0 && (
+                                                                <div className="text-danger small mt-1" style={{ fontWeight: 600, fontSize: '12px' }}>
+                                                                    <i className="fa fa-times-circle me-1"></i> This product is currently out of stock. Please remove it from your cart.
+                                                                </div>
+                                                            )}
+                                                            {prod.isActive !== false && prod.stock !== undefined && prod.stock > 0 && quantity > prod.stock && (
+                                                                <div className="text-danger small mt-1" style={{ fontWeight: 600, fontSize: '12px' }}>
+                                                                    <i className="fa fa-exclamation-triangle me-1"></i> Requested quantity ({quantity}) exceeds available stock ({prod.stock}). Please reduce quantity.
+                                                                </div>
+                                                            )}
+
                                                             {(offer && offer.discountValue !== undefined && normalQty > 0) && (
                                                                 <div className="mt-1">
                                                                     <span className="badge" style={{ fontSize: '11px', fontWeight: '500', padding: '2px 8px', background: '#fff3cd', color: '#826002', border: '1px solid #ffde80' }}>
@@ -289,7 +373,24 @@ const Cart: React.FC = () => {
                                                                         <span style={{ fontSize: '18px', fontWeight: '500' }}>−</span>
                                                                     </button>
                                                                     <input type="text" value={quantity} readOnly style={{ width: '25px', height: '25px', textAlign: 'center', border: '1px solid #eee', color: '#1a1a1a', background: '#fff', margin: '0', borderRadius: '0', fontSize: '14px' }} />
-                                                                    <button className="btn btn-sm" onClick={() => updateQty(prod._id, 1)} style={{ background: '#1a1a1a', color: '#fff', border: 'none', width: '25px', height: '25px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '0' }}>
+                                                                    <button
+                                                                        className="btn btn-sm"
+                                                                        disabled={prod.isActive === false || (prod.stock !== undefined && (prod.stock <= 0 || quantity >= prod.stock))}
+                                                                        onClick={() => updateQty(prod._id, 1)}
+                                                                        style={{
+                                                                            background: '#1a1a1a',
+                                                                            color: '#fff',
+                                                                            border: 'none',
+                                                                            width: '25px',
+                                                                            height: '25px',
+                                                                            display: 'flex',
+                                                                            alignItems: 'center',
+                                                                            justifyContent: 'center',
+                                                                            borderRadius: '0',
+                                                                            opacity: (prod.isActive === false || (prod.stock !== undefined && (prod.stock <= 0 || quantity >= prod.stock))) ? 0.35 : 1,
+                                                                            cursor: (prod.isActive === false || (prod.stock !== undefined && (prod.stock <= 0 || quantity >= prod.stock))) ? 'not-allowed' : 'pointer'
+                                                                        }}
+                                                                    >
                                                                         <span style={{ fontSize: '18px', fontWeight: '500' }}>+</span>
                                                                     </button>
                                                                 </div>
@@ -402,8 +503,34 @@ const Cart: React.FC = () => {
                                         </tr>
                                     </tbody>
                                 </table>
+
+                                {/* Cart-level warning immediately ABOVE PLACE ORDER */}
+                                {hasInvalidItems && (
+                                    <div 
+                                        className="alert alert-danger p-2 mb-3 text-center" 
+                                        role="alert" 
+                                        style={{ 
+                                            borderRadius: '8px', 
+                                            backgroundColor: '#fef2f2', 
+                                            borderColor: '#fca5a5', 
+                                            color: '#b91c1c',
+                                            fontSize: '13px',
+                                            fontWeight: 600,
+                                            lineHeight: '1.4'
+                                        }}
+                                    >
+                                        <i className="fa fa-exclamation-triangle me-1"></i>
+                                        Some products are unavailable or have insufficient stock. Please update your cart before placing your order.
+                                    </div>
+                                )}
+
                                 <button
+                                    disabled={hasInvalidItems || finalItems.length === 0}
                                     onClick={() => {
+                                        if (hasInvalidItems) {
+                                            toast.error('Some products are unavailable or have insufficient stock. Please update your cart before placing your order.');
+                                            return;
+                                        }
                                         if (isUser) {
                                             navigate('/checkout');
                                         } else {
@@ -412,6 +539,7 @@ const Cart: React.FC = () => {
                                         }
                                     }}
                                     className="btn btn-outline-secondary btn-lg w-100"
+                                    style={hasInvalidItems ? { opacity: 0.6, cursor: 'not-allowed' } : {}}
                                 >
                                     PLACE ORDER
                                 </button>

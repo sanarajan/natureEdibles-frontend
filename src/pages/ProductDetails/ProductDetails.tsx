@@ -134,34 +134,74 @@ const ProductDetails: React.FC = () => {
                                         </div>
                                     </div>
                                     <p className="para-text m-b25">{product.description || 'No description available for this product.'}</p>
-                                    <div className="meta-content m-b20 d-flex align-items-end">
-                                        <div className="me-3">
-                                            <span className="price-name">Price</span>
-                                            <span className="price">
-                                                ₹{product.offerPrice ? product.offerPrice.toFixed(2) : product.price.toFixed(2)} 
-                                                {product.offerPrice && product.offerPrice < product.price && (
-                                                    <del className="ms-2 text-muted">₹{product.price.toFixed(2)}</del>
-                                                )}
-                                            </span>
-                                        </div>
-                                    </div>
+                                    
+                                    {(() => {
+                                        const isInactive = product.isActive === false;
+                                        const isOut = product.stock === undefined || product.stock <= 0;
+                                        const isLow = !isOut && product.stock <= 10;
+                                        const stockLabel = isInactive ? 'Unavailable' : isOut ? 'Out of Stock' : isLow ? `Low Stock (Only ${product.stock} left)` : 'In Stock';
+                                        const stockBadge = isInactive ? 'bg-secondary text-white' : isOut ? 'bg-danger text-white' : isLow ? 'bg-warning text-dark' : 'bg-success text-white';
+                                        const isPurchasable = !isInactive && !isOut;
 
-                                    <div className="product-num">
-                                        <div className="btn-quantity style-2 light d-xl-block d-sm-none d-none">
-                                            <label className="form-label">Quantity</label>
-                                            <input type="number" value={quantity} onChange={(e) => setQuantity(parseInt(e.target.value))} />
-                                        </div>
-                                    </div>
+                                        return (
+                                            <>
+                                                <div className="meta-content m-b20 d-flex align-items-center">
+                                                    <div className="me-3">
+                                                        <span className="price-name">Price</span>
+                                                        <span className="price">
+                                                            ₹{product.offerPrice ? product.offerPrice.toFixed(2) : product.price.toFixed(2)} 
+                                                            {product.offerPrice && product.offerPrice < product.price && (
+                                                                <del className="ms-2 text-muted">₹{product.price.toFixed(2)}</del>
+                                                            )}
+                                                        </span>
+                                                    </div>
+                                                    <span className={`badge ${stockBadge} ms-3`} style={{ fontSize: '13px', padding: '6px 12px', borderRadius: '4px' }}>
+                                                        {stockLabel}
+                                                    </span>
+                                                </div>
 
-                                    <div className="btn-group cart-btn">
-                                        <button className="btn bnt-lg btn-secondary text-uppercase me-md-4" onClick={handleAddToCart}>Add To Cart</button>
-                                        <button className="btn btn-outline-secondary btn-lg btn-icon" onClick={handleAddToWishlist}>
-                                            <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-                                                <path d="M9 16.9986C8.74374 16.9986 8.49669 16.9058 8.30415 16.7371C7.577 16.1013 6.87593 15.5038 6.2574 14.9767L6.25424 14.974C4.44081 13.4286 2.87485 12.094 1.78528 10.7794C0.567307 9.30968 0 7.9162 0 6.39391C0 4.91487 0.507156 3.55037 1.42795 2.55157C2.35973 1.54097 3.63826 0.984375 5.02844 0.984375C6.06747 0.984375 7.01903 1.31287 7.8566 1.96065C8.2793 2.28763 8.66245 2.68781 9 3.15459C9.33769 2.68781 9.7207 2.28763 10.1435 1.96065C10.9811 1.31287 11.9327 0.984375 12.9717 0.984375C14.3617 0.984375 15.6404 1.54097 16.5722 2.55157C17.493 3.55037 18 4.91487 18 6.39391C18 7.9162 17.4328 9.30968 16.2149 10.7792C15.1253 12.094 13.5595 13.4285 11.7463 14.9737C11.1267 15.5016 10.4245 16.1001 9.69571 16.7374C9.50331 16.9058 9.25612 16.9986 9 16.9986ZM5.02844 2.03879C3.93626 2.03879 2.93294 2.47467 2.20303 3.26624C1.46228 4.06975 1.05428 5.18047 1.05428 6.39391C1.05428 7.67422 1.53012 8.81927 2.59703 10.1066C3.62823 11.3509 5.16206 12.658 6.938 14.1715L6.9413 14.1743C7.56216 14.7034 8.26598 15.3033 8.99849 15.9438C9.7354 15.302 10.4403 14.7012 11.0624 14.1713C12.8382 12.6578 14.3719 11.3509 15.4031 10.1066C16.4699 8.81927 16.9457 7.67422 16.9457 6.39391C16.9457 5.18047 16.5377 4.06975 15.797 3.26624C15.0672 2.47467 14.0637 2.03879 12.9717 2.03879C12.1716 2.03879 11.437 2.29312 10.7884 2.79465C10.2104 3.24179 9.80777 3.80704 9.5717 4.20255C9.4503 4.40593 9.23662 4.52733 9 4.52733C8.76338 4.52733 8.5497 4.40593 8.4283 4.20255C8.19237 3.80704 7.78972 3.24179 7.21156 2.79465C6.56296 2.29312 5.82838 2.03879 5.02844 2.03879Z" fill="black" />
-                                            </svg>
-                                            Add To Wishlist
-                                        </button>
-                                    </div>
+                                                <div className="product-num">
+                                                    <div className="btn-quantity style-2 light d-xl-block d-sm-none d-none">
+                                                        <label className="form-label">Quantity</label>
+                                                        <input
+                                                            type="number"
+                                                            min={1}
+                                                            max={product.stock || 1}
+                                                            value={!isPurchasable ? 0 : quantity}
+                                                            disabled={!isPurchasable}
+                                                            onChange={(e) => {
+                                                                const val = parseInt(e.target.value) || 1;
+                                                                const maxAllowed = product.stock !== undefined ? product.stock : 9999;
+                                                                setQuantity(Math.min(maxAllowed, Math.max(1, val)));
+                                                            }}
+                                                        />
+                                                    </div>
+                                                </div>
+
+                                                <div className="btn-group cart-btn">
+                                                    <button
+                                                        className="btn bnt-lg btn-secondary text-uppercase me-md-4"
+                                                        disabled={!isPurchasable}
+                                                        onClick={handleAddToCart}
+                                                        style={{
+                                                            cursor: !isPurchasable ? 'not-allowed' : 'pointer',
+                                                            opacity: !isPurchasable ? 0.65 : 1,
+                                                            background: !isPurchasable ? '#94a3b8' : undefined,
+                                                            borderColor: !isPurchasable ? '#94a3b8' : undefined
+                                                        }}
+                                                    >
+                                                        {!isPurchasable ? (isInactive ? 'Unavailable' : 'Out Of Stock') : 'Add To Cart'}
+                                                    </button>
+                                                    <button className="btn btn-outline-secondary btn-lg btn-icon" onClick={handleAddToWishlist}>
+                                                        <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                                                            <path d="M9 16.9986C8.74374 16.9986 8.49669 16.9058 8.30415 16.7371C7.577 16.1013 6.87593 15.5038 6.2574 14.9767L6.25424 14.974C4.44081 13.4286 2.87485 12.094 1.78528 10.7794C0.567307 9.30968 0 7.9162 0 6.39391C0 4.91487 0.507156 3.55037 1.42795 2.55157C2.35973 1.54097 3.63826 0.984375 5.02844 0.984375C6.06747 0.984375 7.01903 1.31287 7.8566 1.96065C8.2793 2.28763 8.66245 2.68781 9 3.15459C9.33769 2.68781 9.7207 2.28763 10.1435 1.96065C10.9811 1.31287 11.9327 0.984375 12.9717 0.984375C14.3617 0.984375 15.6404 1.54097 16.5722 2.55157C17.493 3.55037 18 4.91487 18 6.39391C18 7.9162 17.4328 9.30968 16.2149 10.7792C15.1253 12.094 13.5595 13.4285 11.7463 14.9737C11.1267 15.5016 10.4245 16.1001 9.69571 16.7374C9.50331 16.9058 9.25612 16.9986 9 16.9986ZM5.02844 2.03879C3.93626 2.03879 2.93294 2.47467 2.20303 3.26624C1.46228 4.06975 1.05428 5.18047 1.05428 6.39391C1.05428 7.67422 1.53012 8.81927 2.59703 10.1066C3.62823 11.3509 5.16206 12.658 6.938 14.1715L6.9413 14.1743C7.56216 14.7034 8.26598 15.3033 8.99849 15.9438C9.7354 15.302 10.4403 14.7012 11.0624 14.1713C12.8382 12.6578 14.3719 11.3509 15.4031 10.1066C16.4699 8.81927 16.9457 7.67422 16.9457 6.39391C16.9457 5.18047 16.5377 4.06975 15.797 3.26624C15.0672 2.47467 14.0637 2.03879 12.9717 2.03879C12.1716 2.03879 11.437 2.29312 10.7884 2.79465C10.2104 3.24179 9.80777 3.80704 9.5717 4.20255C9.4503 4.40593 9.23662 4.52733 9 4.52733C8.76338 4.52733 8.5497 4.40593 8.4283 4.20255C8.19237 3.80704 7.78972 3.24179 7.21156 2.79465C6.56296 2.29312 5.82838 2.03879 5.02844 2.03879Z" fill="black" />
+                                                        </svg>
+                                                        Add To Wishlist
+                                                    </button>
+                                                </div>
+                                            </>
+                                        );
+                                    })()}
 
                                     <div className="dz-info">
                                         <ul>
