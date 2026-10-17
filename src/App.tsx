@@ -11,11 +11,13 @@ import AdminOrderDetails from './pages/Admin/Orders/AdminOrderDetails'
 import AdminCoupons from './pages/Admin/Coupons/AdminCoupons'
 import AddCoupon from './pages/Admin/Coupons/AddCoupon'
 import AdminConsultations from './pages/Admin/Consultations/AdminConsultations'
+import AdminDietPlanView from './pages/Admin/Consultations/AdminDietPlanView'
 import AdminConsultationSettings from './pages/Admin/Consultations/AdminConsultationSettings'
 import AgencyList from './pages/Admin/ShippingAgencies/AgencyList'
 import AgencyForm from './pages/Admin/ShippingAgencies/AgencyForm'
 import ShippingCharges from './pages/Admin/ShippingCharges/ShippingCharges'
 import PaymentSettings from './pages/Admin/Settings/PaymentSettings'
+import PaymentAccountView from './pages/Admin/Settings/PaymentAccountView'
 import AdminProfile from './pages/Admin/Profile/AdminProfile'
 import ProductCategoryOffers from './pages/Admin/Offers/ProductCategoryOffers'
 import AdminComboOffers from './pages/Admin/Offers/ComboOffers'
@@ -142,6 +144,7 @@ function App() {
           <Route path="/admin/orders/completed" element={<AdminOrders />} />
 
           <Route path="/admin/consultations" element={<AdminConsultations />} />
+          <Route path="/admin/consultations/:id/diet-plan" element={<AdminDietPlanView />} />
           <Route path="/admin/consultations/settings" element={<AdminConsultationSettings />} />
 
           <Route path="/admin/finance/billing" element={<div className="p-4">Finance Billing (Coming Soon)</div>} />
@@ -156,6 +159,7 @@ function App() {
           <Route path="/admin/shipping-charges" element={<ShippingCharges />} />
 
           <Route path="/admin/payment-settings" element={<PaymentSettings />} />
+          <Route path="/admin/payment-settings/:id" element={<PaymentAccountView />} />
           <Route path="/admin/settings" element={<div className="p-4">Settings Page (Coming Soon)</div>} />
           <Route path="/admin/integrations" element={<div className="p-4">Integrations Page (Coming Soon)</div>} />
         </Route>
@@ -244,6 +248,11 @@ function App() {
                   <Route path="/account/consultations" element={
                     <ProtectedRoute type="user">
                       <UserConsultationHistory />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/account/consultations/:id/diet-plan" element={
+                    <ProtectedRoute type="user">
+                      <DietDashboard />
                     </ProtectedRoute>
                   } />
                   <Route path="/account/diet-dashboard" element={

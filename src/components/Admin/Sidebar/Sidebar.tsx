@@ -168,10 +168,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
                         </div>
                     </div>
 
-                    <NavLink to="/admin/products" className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'}>
-                        <Package size={20} />
-                        <span>Products</span>
-                    </NavLink>
+                   
 
                     <NavLink to="/admin/categories" className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'}>
                         <Tags size={20} />
@@ -181,6 +178,10 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
                     <NavLink to="/admin/subcategories" className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'}>
                         <Layers size={20} />
                         <span>Subcategories</span>
+                    </NavLink>
+                     <NavLink to="/admin/products" className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'}>
+                        <Package size={20} />
+                        <span>Products</span>
                     </NavLink>
 
                     {/* 
@@ -219,7 +220,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
                         <span>Shipping Charges</span>
                     </NavLink>
 
-                    <div className={`nav-group ${expandedMenus.finance ? 'expanded' : ''}`}>
+                    {/* <div className={`nav-group ${expandedMenus.finance ? 'expanded' : ''}`}>
                         <div className="nav-item-toggle" onClick={() => toggleMenu('finance')}>
                             <div className="nav-item-left">
                                 <BarChart3 size={20} />
@@ -242,9 +243,9 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
                                 <span>Discount</span>
                             </NavLink>
                         </div>
-                    </div>
+                    </div> */}
 
-                    <NavLink to="/admin/integrations" className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'}>
+                    {/* <NavLink to="/admin/integrations" className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'}>
                         <Layers size={20} />
                         <span>Integrations</span>
                     </NavLink>
@@ -252,7 +253,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
                     <NavLink to="/admin/settings" className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'}>
                         <Settings size={20} />
                         <span>Settings</span>
-                    </NavLink>
+                    </NavLink> */}
 
                     <NavLink to="/admin/payment-settings" className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'}>
                         <Wallet size={20} />
@@ -260,7 +261,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
                     </NavLink>
                 </div>
 
-                <div className="nav-section mt-4">
+                {/* <div className="nav-section mt-4">
                     <p className="section-label">OTHER</p>
                     <NavLink to="/admin/pages" className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'}>
                         <BookOpen size={20} />
@@ -271,7 +272,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
                         <Heart size={20} />
                         <span>Personalize ❤️</span>
                     </NavLink>
-                </div>
+                </div> */}
 
                 <div className="nav-section mt-4" style={{ marginTop: 'auto', paddingBottom: '20px' }}>
                     <button className="nav-item" onClick={handleLogout} style={{ border: 'none', background: 'none', width: '100%', textAlign: 'left', cursor: 'pointer', color: '#ff4d4f', marginTop: '20px' }}>

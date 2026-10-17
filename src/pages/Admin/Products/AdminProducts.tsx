@@ -5,12 +5,15 @@ import { toast } from 'react-toastify';
 import apiClient from '../../../services/adminApiClient';
 import { formatDate } from '../../../utils/formatDate';
 import '../../../styles/admin-pages.css';
+import Pagination from '../../../components/Pagination/Pagination';
 
 const AdminProducts: React.FC = () => {
     const navigate = useNavigate();
     const [products, setProducts] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 10;
     const [showViewModal, setShowViewModal] = useState(false);
     const [selectedProduct, setSelectedProduct] = useState<any>(null);
     const [activeImgIndex, setActiveImgIndex] = useState(0);
@@ -113,6 +116,8 @@ const AdminProducts: React.FC = () => {
         p.productName.toLowerCase().includes(searchTerm.toLowerCase()) ||
         (p.categoryId?.categoryName || '').toLowerCase().includes(searchTerm.toLowerCase())
     );
+    const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
+    const displayedProducts = filteredProducts.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
     return (
         <div className="admin-page-container">
@@ -136,7 +141,10 @@ const AdminProducts: React.FC = () => {
                             type="text"
                             placeholder="Search products..."
                             value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
+                            onChange={(e) => {
+                                setSearchTerm(e.target.value);
+                                setCurrentPage(1);
+                            }}
                         />
                     </div>
                     <button className="action-btn" title="Filters">
@@ -164,12 +172,12 @@ const AdminProducts: React.FC = () => {
                                 <tr>
                                     <td colSpan={8} style={{ textAlign: 'center', padding: '2rem' }}>Loading products...</td>
                                 </tr>
-                            ) : filteredProducts.length === 0 ? (
+                            ) : displayedProducts.length === 0 ? (
                                 <tr>
                                     <td colSpan={8} style={{ textAlign: 'center', padding: '2rem' }}>No products found</td>
                                 </tr>
                             ) : (
-                                filteredProducts.map((product) => (
+                                displayedProducts.map((product) => (
                                     <tr key={product._id}>
                                         <td>
                                             <div className="product-info">
@@ -233,7 +241,7 @@ const AdminProducts: React.FC = () => {
                                                         setSelectedProduct(product);
                                                         setActiveImgIndex(0);
                                                         setShowViewModal(true);
-                                                    }}
+                                                     }}
                                                 >
                                                     <Eye size={16} />
                                                 </button>
@@ -262,6 +270,12 @@ const AdminProducts: React.FC = () => {
                         </tbody>
                     </table>
                 </div>
+
+                <Pagination
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    onPageChange={setCurrentPage}
+                />
             </div>
             {showViewModal && selectedProduct && (
                 <div className="modal-overlay" onClick={() => setShowViewModal(false)}>

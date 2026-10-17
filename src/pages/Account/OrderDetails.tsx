@@ -200,16 +200,16 @@ const OrderDetails: React.FC = () => {
                                                 <li><Link to="/account">Dashboard</Link></li>
                                                 <li><Link to="/account/orders" className="active">Orders</Link></li>
                                                 <li><Link to="/account/consultations">Consultation History</Link></li>
-                                                <li><Link to="#">Downloads</Link></li>
-                                                <li><Link to="#">Return request</Link></li>
+                                                {/* <li><Link to="#">Downloads</Link></li> */}
+                                                {/* <li><Link to="#">Return request</Link></li> */}
                                             </ul>
                                             <div className="nav-title bg-light">ACCOUNT SETTINGS</div>
                                             <ul className="account-info-list">
                                                 <li><Link to="/account/profile">Profile</Link></li>
                                                 <li><Link to="/account/address">Address</Link></li>
-                                                <li><Link to="#">Shipping methods</Link></li>
-                                                <li><Link to="#">Payment Methods</Link></li>
-                                                <li><Link to="#">Review</Link></li>
+                                                {/* <li><Link to="#">Shipping methods</Link></li> */}
+                                                {/* <li><Link to="#">Payment Methods</Link></li> */}
+                                                {/* <li><Link to="#">Review</Link></li> */}
                                             </ul>
                                         </div>
                                     </div>

@@ -86,16 +86,16 @@ const Address: React.FC = () => {
                                             <li><Link to="/account">Dashboard</Link></li>
                                             <li><Link to="/account/orders">Orders</Link></li>
                                             <li><Link to="/account/consultations">Consultation History</Link></li>
-                                            <li><Link to="/account/downloads">Downloads</Link></li>
-                                            <li><Link to="/account/return">Return request</Link></li>
+                                            {/* <li><Link to="/account/downloads">Downloads</Link></li> */}
+                                            {/* <li><Link to="/account/return">Return request</Link></li> */}
                                         </ul>
                                         <div className="nav-title bg-light uppercase">ACCOUNT SETTINGS</div>
                                         <ul className="account-info-list">
                                             <li><Link to="/account/profile">Profile</Link></li>
                                             <li className="active"><Link to="/account/address">Address</Link></li>
-                                            <li><Link to="/account/shipping">Shipping methods</Link></li>
-                                            <li><Link to="/account/payment">Payment Methods</Link></li>
-                                            <li><Link to="/account/review">Review</Link></li>
+                                            {/* <li><Link to="/account/shipping">Shipping methods</Link></li> */}
+                                            {/* <li><Link to="/account/payment">Payment Methods</Link></li> */}
+                                            {/* <li><Link to="/account/review">Review</Link></li> */}
                                         </ul>
                                     </div>
                                 </div>

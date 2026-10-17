@@ -4,6 +4,7 @@ import userApiClient from '../../services/userApiClient';
 import { toast } from 'react-toastify';
 import { useSelector } from 'react-redux';
 import type { RootState } from '../../store';
+import Pagination from '../../components/Pagination/Pagination';
 
 // Asset Imports
 import bg1 from '../../assets/images/organic/premium-organic-pulses-81.jpeg';
@@ -177,6 +178,8 @@ const Shop: React.FC = () => {
     const [hierarchies, setHierarchies] = useState<any[]>([]);
     const [wishlist, setWishlist] = useState<string[]>([]);
     const [loading, setLoading] = useState(true);
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 12;
 
     const [activeCategoryIds, setActiveCategoryIds] = useState<string[]>([]);
     const [activeSubcategoryIds, setActiveSubcategoryIds] = useState<string[]>([]);
@@ -360,6 +363,10 @@ const Shop: React.FC = () => {
         };
         const timer = setTimeout(fetchProducts, 300);
         return () => clearTimeout(timer);
+    }, [activeCategoryIds, activeSubcategoryIds, searchQuery, priceMin, priceMax, sortBy, onOffer]);
+
+    useEffect(() => {
+        setCurrentPage(1);
     }, [activeCategoryIds, activeSubcategoryIds, searchQuery, priceMin, priceMax, sortBy, onOffer]);
 
     const handleCategoryToggle = (catId: string, subcategories: any[]) => {
@@ -593,7 +600,12 @@ const Shop: React.FC = () => {
                                     <div className="panel-btn d-xl-none" onClick={() => setIsFilterActive(true)}>
                                         <i className="fa-solid fa-filter" style={{ fontSize: '18px', marginRight: '8px' }}></i> Filter
                                     </div>
-                                    <span>Showing 1–{products.length} Results</span>
+                                    <span>
+                                        {products.length === 0 
+                                            ? 'Showing 0 Results' 
+                                            : `Showing ${(currentPage - 1) * itemsPerPage + 1}–${Math.min(currentPage * itemsPerPage, products.length)} of ${products.length} Results`
+                                        }
+                                    </span>
                                 </div>
                                 <div className="filter-right-area">
                                     <div className="form-group border-0">
@@ -656,95 +668,105 @@ const Shop: React.FC = () => {
                                     <button className="btn btn-secondary" onClick={handleReset}>Clear All Filters</button>
                                 </div>
                             ) : (
-                                <div className="row g-xl-4 g-3">
-                                    {products.map((prod) => {
-                                        const colClass = viewMode === 'list'
-                                            ? 'col-12'
-                                            : viewMode === 'column'
-                                                ? 'col-12 col-xl-4 col-lg-4 col-md-6 col-sm-6'
-                                                : 'col-12 col-xl-3 col-lg-4 col-md-6 col-sm-6';
+                                <>
+                                    <div className="row g-xl-4 g-3">
+                                        {products.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((prod) => {
+                                            const colClass = viewMode === 'list'
+                                                ? 'col-12'
+                                                : viewMode === 'column'
+                                                    ? 'col-12 col-xl-4 col-lg-4 col-md-6 col-sm-6'
+                                                    : 'col-12 col-xl-3 col-lg-4 col-md-6 col-sm-6';
 
-                                        return (
-                                            <div key={prod._id} className={colClass}>
-                                                {viewMode === 'list' && (
-                                                    <div className="dz-shop-card style-2">
-                                                        <div className="dz-media media-overlay">
-                                                            <img src={prod.images && prod.images.length > 0 ? prod.images[0] : product1} alt={prod.productName} />
-                                                            {prod.featured && (
-                                                                <div className="product-tag"><span className="badge badge-secondary">Featured</span></div>
-                                                            )}
-                                                        </div>
-                                                        <div className="dz-content">
-                                                            <div className="dz-header">
-                                                                <div>
-                                                                    <h4 className="title mb-0"><Link to={`/product/${prod._id}`}>{prod.productName}</Link></h4>
-                                                                    <ul className="dz-tags"><li><a href="javascript:void(0);">{prod.categoryId?.categoryName}</a></li></ul>
-                                                                </div>
-                                                                <div className="review-num"><StarRating count={4} /><span> 150 Review</span></div>
-                                                            </div>
-                                                            <div className="dz-body">
-                                                                <p className="dz-para">High quality organic product from Natural Edibles.</p>
-                                                                <div className="rate">
-                                                                    <div className="d-flex align-items-center mb-xl-3 mb-2">
-                                                                        <div className="meta-content">
-                                                                            <span className="price">
-                                                                                ₹{prod.offerPrice ? prod.offerPrice.toFixed(2) : prod.price.toFixed(2)}
-                                                                                {prod.offerPrice && prod.offerPrice < prod.price && (
-                                                                                    <del className="ms-2 text-muted" style={{ fontSize: '0.75em' }}>₹{prod.price.toFixed(2)}</del>
-                                                                                )}
-                                                                            </span>
-                                                                        </div>
-                                                                    </div>
-                                                                    <div className="d-flex">
-                                                                        <Link to="#" onClick={(e) => { e.preventDefault(); handleAddToCart(prod, 1, true); }} className="btn btn-secondary btn-md btn-icon">Add to cart</Link>
-                                                                        <div className="bookmark-btn style-1" onClick={() => handleToggleWishlist(prod)}>
-                                                                            <input className="form-check-input" type="checkbox" id={`fav-${prod._id}`} checked={wishlist.includes(prod._id)} readOnly />
-                                                                            <label className="form-check-label" htmlFor={`fav-${prod._id}`}><HeartSVG filled={wishlist.includes(prod._id)} /></label>
-                                                                        </div>
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                )}
-
-                                                {viewMode !== 'list' && (
-                                                    <div className="shop-card">
-                                                        <div className="dz-media media-overlay">
-                                                            <img src={prod.images && prod.images.length > 0 ? prod.images[0] : product1} alt={prod.productName} />
-                                                            {(prod.featured || prod.isBestSeller) && (
-                                                                <div className="shop-badge-wrap">
-                                                                    {prod.featured && <span className="shop-featured-badge">FEATURED</span>}
-                                                                    {prod.isBestSeller && <span className="shop-offer-badge">BEST SELLER</span>}
-                                                                </div>
-                                                            )}
-                                                            <div className="shop-meta">
-                                                                <button className="btn btn-secondary quick-view-trigger" onClick={() => setQuickViewProduct(prod)}>Quick View</button>
-                                                                <button
-                                                                    className="btn btn-primary meta-icon"
-                                                                    onClick={(e) => { e.preventDefault(); handleToggleWishlist(prod); }}
-                                                                >
-                                                                    <HeartSVG filled={wishlist.includes(prod._id)} />
-                                                                </button>
-                                                                <Link to="#" onClick={(e) => { e.preventDefault(); handleAddToCart(prod, 1, true); }} className="btn btn-primary meta-icon dz-carticon"><i className="flaticon-shopping-cart-1"></i></Link>
-                                                            </div>
-                                                        </div>
-                                                        <div className="dz-content">
-                                                            <h5 className="title"><Link to={`/product/${prod._id}`}>{prod.productName}</Link></h5>
-                                                            <h6 className="price">
-                                                                ₹{prod.offerPrice ? prod.offerPrice.toFixed(2) : prod.price.toFixed(2)}
-                                                                {prod.offerPrice && prod.offerPrice < prod.price && (
-                                                                    <del className="ms-2 text-muted" style={{ fontSize: '0.85em' }}>₹{prod.price.toFixed(2)}</del>
+                                            return (
+                                                <div key={prod._id} className={colClass}>
+                                                    {viewMode === 'list' && (
+                                                        <div className="dz-shop-card style-2">
+                                                            <div className="dz-media media-overlay">
+                                                                <img src={prod.images && prod.images.length > 0 ? prod.images[0] : product1} alt={prod.productName} />
+                                                                {prod.featured && (
+                                                                    <div className="product-tag"><span className="badge badge-secondary">Featured</span></div>
                                                                 )}
-                                                            </h6>
-                                                            <div className="shop-cart-btn"><Link to="#" onClick={(e) => { e.preventDefault(); handleAddToCart(prod, 1, true); }}><CartBasketSVG /></Link></div>
+                                                            </div>
+                                                            <div className="dz-content">
+                                                                <div className="dz-header">
+                                                                    <div>
+                                                                        <h4 className="title mb-0"><Link to={`/product/${prod._id}`}>{prod.productName}</Link></h4>
+                                                                        <ul className="dz-tags"><li><a href="javascript:void(0);">{prod.categoryId?.categoryName}</a></li></ul>
+                                                                    </div>
+                                                                    <div className="review-num"><StarRating count={4} /><span> 150 Review</span></div>
+                                                                </div>
+                                                                <div className="dz-body">
+                                                                    <p className="dz-para">High quality organic product from Natural Edibles.</p>
+                                                                    <div className="rate">
+                                                                        <div className="d-flex align-items-center mb-xl-3 mb-2">
+                                                                            <div className="meta-content">
+                                                                                <span className="price">
+                                                                                    ₹{prod.offerPrice ? prod.offerPrice.toFixed(2) : prod.price.toFixed(2)}
+                                                                                    {prod.offerPrice && prod.offerPrice < prod.price && (
+                                                                                        <del className="ms-2 text-muted" style={{ fontSize: '0.75em' }}>₹{prod.price.toFixed(2)}</del>
+                                                                                    )}
+                                                                                </span>
+                                                                            </div>
+                                                                        </div>
+                                                                        <div className="d-flex">
+                                                                            <Link to="#" onClick={(e) => { e.preventDefault(); handleAddToCart(prod, 1, true); }} className="btn btn-secondary btn-md btn-icon">Add to cart</Link>
+                                                                            <div className="bookmark-btn style-1" onClick={() => handleToggleWishlist(prod)}>
+                                                                                <input className="form-check-input" type="checkbox" id={`fav-${prod._id}`} checked={wishlist.includes(prod._id)} readOnly />
+                                                                                <label className="form-check-label" htmlFor={`fav-${prod._id}`}><HeartSVG filled={wishlist.includes(prod._id)} /></label>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
                                                         </div>
-                                                    </div>
-                                                )}
-                                            </div>
-                                        );
-                                    })}
-                                </div>
+                                                    )}
+
+                                                    {viewMode !== 'list' && (
+                                                        <div className="shop-card">
+                                                            <div className="dz-media media-overlay">
+                                                                <img src={prod.images && prod.images.length > 0 ? prod.images[0] : product1} alt={prod.productName} />
+                                                                {(prod.featured || prod.isBestSeller) && (
+                                                                    <div className="shop-badge-wrap">
+                                                                        {prod.featured && <span className="shop-featured-badge">FEATURED</span>}
+                                                                        {prod.isBestSeller && <span className="shop-offer-badge">BEST SELLER</span>}
+                                                                    </div>
+                                                                )}
+                                                                <div className="shop-meta">
+                                                                    <button className="btn btn-secondary quick-view-trigger" onClick={() => setQuickViewProduct(prod)}>Quick View</button>
+                                                                    <button
+                                                                        className="btn btn-primary meta-icon"
+                                                                        onClick={(e) => { e.preventDefault(); handleToggleWishlist(prod); }}
+                                                                    >
+                                                                        <HeartSVG filled={wishlist.includes(prod._id)} />
+                                                                    </button>
+                                                                    <Link to="#" onClick={(e) => { e.preventDefault(); handleAddToCart(prod, 1, true); }} className="btn btn-primary meta-icon dz-carticon"><i className="flaticon-shopping-cart-1"></i></Link>
+                                                                </div>
+                                                            </div>
+                                                            <div className="dz-content">
+                                                                <h5 className="title"><Link to={`/product/${prod._id}`}>{prod.productName}</Link></h5>
+                                                                <h6 className="price">
+                                                                    ₹{prod.offerPrice ? prod.offerPrice.toFixed(2) : prod.price.toFixed(2)}
+                                                                    {prod.offerPrice && prod.offerPrice < prod.price && (
+                                                                        <del className="ms-2 text-muted" style={{ fontSize: '0.85em' }}>₹{prod.price.toFixed(2)}</del>
+                                                                    )}
+                                                                </h6>
+                                                                <div className="shop-cart-btn"><Link to="#" onClick={(e) => { e.preventDefault(); handleAddToCart(prod, 1, true); }}><CartBasketSVG /></Link></div>
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                    <Pagination
+                                        currentPage={currentPage}
+                                        totalPages={Math.ceil(products.length / itemsPerPage)}
+                                        onPageChange={(page) => {
+                                            setCurrentPage(page);
+                                            window.scrollTo({ top: 300, behavior: 'smooth' });
+                                        }}
+                                    />
+                                </>
                             )}
                         </div>
                     </div>

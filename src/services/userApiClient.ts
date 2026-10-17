@@ -3,6 +3,7 @@ import axios, {
 } from "axios";
 import type { AxiosResponse, InternalAxiosRequestConfig } from "axios";
 import { API_BASE_URL } from '../constants/apiConstants';
+import { toast } from 'react-toastify';
 
 const getAccessToken = (): string | null => {
     return localStorage.getItem('user_accessToken');
@@ -38,6 +39,14 @@ userApiClient.interceptors.response.use(
         // If the request explicitly asks to skip auth interception (e.g. login, register, logout),
         // we do not attempt to refresh tokens to avoid masking the real error.
         if (originalRequest.skipAuthInterceptor) {
+            return Promise.reject(error);
+        }
+
+        if (error.response?.status === 403 && (error.response.data as any)?.code === 'ACCOUNT_INACTIVE') {
+            localStorage.removeItem('user_accessToken');
+            localStorage.removeItem('user_data');
+            toast.error("Your account has been deactivated. Please contact support.");
+            window.location.href = '/login';
             return Promise.reject(error);
         }
 

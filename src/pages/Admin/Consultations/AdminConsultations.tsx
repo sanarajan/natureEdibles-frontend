@@ -2,13 +2,19 @@ import React, { useEffect, useState } from 'react';
 import { getAdminConsultations, updateConsultationStatus } from '../../../services/api/consultationApi';
 import { toast } from 'react-toastify';
 import Swal from 'sweetalert2';
-import { Loader2, Search, Filter, Download, Eye, FileText } from 'lucide-react';
+import { Loader2, Search, Filter, Download, Eye, FileText, Utensils } from 'lucide-react';
 import '../../../styles/admin-pages.css';
+import adminApiClient from '../../../services/adminApiClient';
+import AdminDietPlanForm from './AdminDietPlanForm';
+import AdminDietPlanView from './AdminDietPlanView';
+import Pagination from '../../../components/Pagination/Pagination';
 
 const AdminConsultations: React.FC = () => {
     const [consultations, setConsultations] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 10;
     
     // Modal states
     const [selectedConsultation, setSelectedConsultation] = useState<any>(null);
@@ -18,6 +24,45 @@ const AdminConsultations: React.FC = () => {
     const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
     const [rejectionReason, setRejectionReason] = useState('');
     const [updatingStatus, setUpdatingStatus] = useState(false);
+
+    // Diet Plan state
+    const [isDietPlanFormOpen, setIsDietPlanFormOpen] = useState(false);
+    const [isDietPlanViewOpen, setIsDietPlanViewOpen] = useState(false);
+    const [selectedConsultationForDietPlan, setSelectedConsultationForDietPlan] = useState<any>(null);
+    const [dietPlanStatusMap, setDietPlanStatusMap] = useState<Record<string, boolean>>({});
+
+    // Edit Date State
+    const [isEditingDate, setIsEditingDate] = useState(false);
+    const [editDateValue, setEditDateValue] = useState('');
+
+    const checkDietPlansForConsultations = async (list: any[]) => {
+        if (!Array.isArray(list) || list.length === 0) return;
+        const completedList = list.filter(c => c.status?.toUpperCase() === 'COMPLETED');
+        if (completedList.length === 0) return;
+
+        try {
+            const checks = await Promise.allSettled(
+                completedList.map(async (c) => {
+                    const cId = c._id || c.id;
+                    try {
+                        const res = await adminApiClient.get(`/admin/diet-plan/consultation/${cId}`);
+                        return { id: cId, hasPlan: !!(res.data?.success && res.data?.data) };
+                    } catch {
+                        return { id: cId, hasPlan: false };
+                    }
+                })
+            );
+            const map: Record<string, boolean> = {};
+            checks.forEach(result => {
+                if (result.status === 'fulfilled' && result.value) {
+                    map[result.value.id] = result.value.hasPlan;
+                }
+            });
+            setDietPlanStatusMap(prev => ({ ...prev, ...map }));
+        } catch {
+            // Silently ignore check errors
+        }
+    };
 
     const fetchConsultations = async () => {
         try {
@@ -33,6 +78,7 @@ const AdminConsultations: React.FC = () => {
                     ? result.data 
                     : [];
                 setConsultations(list);
+                checkDietPlansForConsultations(list);
             }
         } catch (error: any) {
             toast.error(error.response?.data?.message || 'Failed to load consultations');
@@ -44,6 +90,22 @@ const AdminConsultations: React.FC = () => {
     useEffect(() => {
         fetchConsultations();
     }, []);
+
+    useEffect(() => {
+        if (selectedConsultation) {
+            const cId = selectedConsultation._id || selectedConsultation.id;
+            if (cId && dietPlanStatusMap[cId] === undefined && selectedConsultation.status?.toUpperCase() === 'COMPLETED') {
+                adminApiClient.get(`/admin/diet-plan/consultation/${cId}`)
+                    .then(res => {
+                        const hasPlan = !!(res.data?.success && res.data?.data);
+                        setDietPlanStatusMap(prev => ({ ...prev, [cId]: hasPlan }));
+                    })
+                    .catch(() => {
+                        setDietPlanStatusMap(prev => ({ ...prev, [cId]: false }));
+                    });
+            }
+        }
+    }, [selectedConsultation]);
 
     const handleStatusUpdate = async (id: string, updates: { status?: string; paymentStatus?: string; rejectionReason?: string }) => {
         try {
@@ -72,19 +134,21 @@ const AdminConsultations: React.FC = () => {
                 });
                 
                 // Update local selected state if view modal is open
-                if (selectedConsultation) {
-                    const selectedId = selectedConsultation.id || selectedConsultation._id;
-                    const updatedId = updated.id || updated._id;
-                    
-                    if (selectedId === updatedId) {
-                        setSelectedConsultation({
-                            ...selectedConsultation,
-                            ...updated,
-                            _id: selectedId,
-                            id: selectedId
-                        });
+                setSelectedConsultation((prev: any) => {
+                    if (prev) {
+                        const prevId = prev.id || prev._id;
+                        const updatedId = updated.id || updated._id;
+                        if (prevId === updatedId) {
+                            return {
+                                ...prev,
+                                ...updated,
+                                _id: prevId,
+                                id: prevId
+                            };
+                        }
                     }
-                }
+                    return prev;
+                });
             } else {
                 toast.error(res.message || 'Failed to update status');
             }
@@ -192,6 +256,7 @@ const AdminConsultations: React.FC = () => {
         switch (s) {
             case 'PENDING': return <span className="admin-badge badge-warning text-dark" style={{ backgroundColor: '#fef3c7', color: '#92400e', border: '1px solid #fde68a' }}>Pending</span>;
             case 'APPROVED': return <span className="admin-badge badge-success">Approved</span>;
+            case 'COMPLETED': return <span className="admin-badge" style={{ backgroundColor: '#d8b4fe', color: '#581c87', border: '1px solid #c084fc' }}>Completed</span>;
             case 'REJECTED': return <span className="admin-badge badge-danger">Rejected</span>;
             default: return <span className="admin-badge">{status}</span>;
         }
@@ -271,6 +336,8 @@ const AdminConsultations: React.FC = () => {
         (c.contactNumber || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
         (c.upiReference || '').toLowerCase().includes(searchTerm.toLowerCase())
     );
+    const totalPages = Math.ceil(filteredConsultations.length / itemsPerPage);
+    const displayedConsultations = filteredConsultations.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
     return (
         <div className="admin-page-container">
@@ -286,7 +353,10 @@ const AdminConsultations: React.FC = () => {
                             type="text"
                             placeholder="Search by customer name, phone, or UTR..."
                             value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
+                            onChange={(e) => {
+                                setSearchTerm(e.target.value);
+                                setCurrentPage(1);
+                            }}
                         />
                     </div>
                 </div>
@@ -312,12 +382,12 @@ const AdminConsultations: React.FC = () => {
                                         <Loader2 className="animate-spin w-8 h-8 text-primary mx-auto" />
                                     </td>
                                 </tr>
-                            ) : filteredConsultations.length === 0 ? (
+                            ) : displayedConsultations.length === 0 ? (
                                 <tr>
                                     <td colSpan={8} style={{ textAlign: 'center', padding: '2rem' }}>No consultations found</td>
                                 </tr>
                             ) : (
-                                filteredConsultations.map(c => {
+                                displayedConsultations.map(c => {
                                     const bookingId = c._id || c.id;
                                     return (
                                     <tr key={bookingId}>
@@ -339,7 +409,7 @@ const AdminConsultations: React.FC = () => {
                                         <td>
                                             <div className="table-actions">
                                                 <button 
-                                                    className="action-btn"
+                                                    className="action-btn" 
                                                     title="View Details"
                                                     onClick={() => {
                                                         setSelectedConsultation({ ...c, _id: bookingId });
@@ -348,6 +418,19 @@ const AdminConsultations: React.FC = () => {
                                                 >
                                                     <Eye size={16} />
                                                 </button>
+                                                {dietPlanStatusMap[bookingId] && (
+                                                    <button 
+                                                        className="action-btn" 
+                                                        title="View Diet Plan"
+                                                        style={{ color: '#16a34a' }}
+                                                        onClick={() => {
+                                                            setSelectedConsultationForDietPlan({ ...c, _id: bookingId });
+                                                            setIsDietPlanViewOpen(true);
+                                                        }}
+                                                    >
+                                                        <Utensils size={16} />
+                                                    </button>
+                                                )}
                                             </div>
                                         </td>
                                     </tr>
@@ -356,6 +439,12 @@ const AdminConsultations: React.FC = () => {
                         </tbody>
                     </table>
                 </div>
+
+                <Pagination
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    onPageChange={setCurrentPage}
+                />
             </div>
 
             {/* View Details Modal */}
@@ -379,7 +468,65 @@ const AdminConsultations: React.FC = () => {
                                 </div>
                                 <div className="col-md-6">
                                     <h6 className="fw-bold text-muted text-uppercase small mb-3">Consultation Details</h6>
-                                    <p className="mb-1"><strong>Date:</strong> {formatDate(selectedConsultation.appointmentDate)}</p>
+                                    <div className="mb-1 d-flex align-items-center gap-2">
+                                        <strong>Date:</strong> 
+                                        {isEditingDate ? (
+                                            <div className="d-flex align-items-center gap-2">
+                                                <input 
+                                                    type="date" 
+                                                    className="form-control form-control-sm" 
+                                                    value={editDateValue}
+                                                    onChange={(e) => setEditDateValue(e.target.value)}
+                                                    min={new Date().toISOString().split('T')[0]}
+                                                />
+                                                <button 
+                                                    className="btn btn-sm btn-success"
+                                                    onClick={async () => {
+                                                        try {
+                                                            setUpdatingStatus(true);
+                                                            const { updateConsultationDate } = await import('../../../services/api/consultationApi');
+                                                            const res = await updateConsultationDate(selectedConsultation._id, editDateValue);
+                                                            if (res.success) {
+                                                                toast.success('Consultation date updated successfully');
+                                                                setSelectedConsultation({ ...selectedConsultation, appointmentDate: editDateValue });
+                                                                setIsEditingDate(false);
+                                                                fetchConsultations();
+                                                            }
+                                                        } catch (error: any) {
+                                                            toast.error(error.response?.data?.message || 'Error updating date');
+                                                        } finally {
+                                                            setUpdatingStatus(false);
+                                                        }
+                                                    }}
+                                                    disabled={updatingStatus}
+                                                >
+                                                    Save
+                                                </button>
+                                                <button 
+                                                    className="btn btn-sm btn-light"
+                                                    onClick={() => setIsEditingDate(false)}
+                                                    disabled={updatingStatus}
+                                                >
+                                                    Cancel
+                                                </button>
+                                            </div>
+                                        ) : (
+                                            <>
+                                                {formatDate(selectedConsultation.appointmentDate)}
+                                                {(!selectedConsultation.status || selectedConsultation.status.toUpperCase() === 'PENDING' || selectedConsultation.status.toUpperCase() === 'APPROVED') && (
+                                                    <button 
+                                                        className="btn btn-sm btn-link text-primary p-0 ms-2"
+                                                        onClick={() => {
+                                                            setEditDateValue(new Date(selectedConsultation.appointmentDate).toISOString().split('T')[0]);
+                                                            setIsEditingDate(true);
+                                                        }}
+                                                    >
+                                                        Edit
+                                                    </button>
+                                                )}
+                                            </>
+                                        )}
+                                    </div>
                                     <p className="mb-1"><strong>Time:</strong> {selectedConsultation.appointmentTime}</p>
                                     <p className="mb-1"><strong>Health Issue:</strong> {selectedConsultation.mainHealthIssue}</p>
                                     <p className="mb-1"><strong>Years Facing Issue:</strong> {selectedConsultation.yearsFacingIssue}</p>
@@ -538,6 +685,57 @@ const AdminConsultations: React.FC = () => {
                                 </>
                             )}
                             
+                            {selectedConsultation.status?.toUpperCase() === 'APPROVED' && (
+                                <button 
+                                    className="btn btn-primary" 
+                                    style={{ borderRadius: '12px' }}
+                                    onClick={async () => {
+                                        const result = await Swal.fire({
+                                            title: 'Mark as Completed?',
+                                            text: 'Are you sure you want to mark this consultation as completed? This will allow you to add a diet plan.',
+                                            icon: 'question',
+                                            showCancelButton: true,
+                                            confirmButtonColor: '#22c55e',
+                                            cancelButtonColor: '#ef4444',
+                                            confirmButtonText: 'Yes, mark completed'
+                                        });
+                                        if (result.isConfirmed) {
+                                            await handleStatusUpdate(selectedConsultation._id, { status: 'COMPLETED' });
+                                        }
+                                    }}
+                                    disabled={updatingStatus}
+                                >
+                                    Mark as Completed
+                                </button>
+                            )}
+
+                            {selectedConsultation.status?.toUpperCase() === 'COMPLETED' && (
+                                <button 
+                                    className="btn btn-secondary" 
+                                    style={{ borderRadius: '12px', backgroundColor: '#8b5cf6', borderColor: '#8b5cf6', color: 'white' }}
+                                    onClick={() => {
+                                        setIsViewModalOpen(false);
+                                        setIsDietPlanFormOpen(true);
+                                    }}
+                                >
+                                    Add / Edit Diet Plan
+                                </button>
+                            )}
+
+                            {selectedConsultation.status?.toUpperCase() === 'COMPLETED' && dietPlanStatusMap[selectedConsultation._id || selectedConsultation.id] && (
+                                <button 
+                                    className="btn btn-success" 
+                                    style={{ borderRadius: '12px', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+                                    onClick={() => {
+                                        setSelectedConsultationForDietPlan(selectedConsultation);
+                                        setIsViewModalOpen(false);
+                                        setIsDietPlanViewOpen(true);
+                                    }}
+                                >
+                                    <Utensils size={16} /> View Diet Plan
+                                </button>
+                            )}
+                            
 
                         </div>
                     </div>
@@ -591,6 +789,33 @@ const AdminConsultations: React.FC = () => {
                 }
                 .admin-input:focus { border-color: var(--admin-primary); box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.1); }
             `}</style>
+            {isDietPlanFormOpen && selectedConsultation && (
+                <AdminDietPlanForm 
+                    consultation={selectedConsultation} 
+                    onClose={() => {
+                        setIsDietPlanFormOpen(false);
+                        const cId = selectedConsultation._id || selectedConsultation.id;
+                        if (cId) {
+                            adminApiClient.get(`/admin/diet-plan/consultation/${cId}`)
+                                .then(res => {
+                                    const hasPlan = !!(res.data?.success && res.data?.data);
+                                    setDietPlanStatusMap(prev => ({ ...prev, [cId]: hasPlan }));
+                                })
+                                .catch(() => {});
+                        }
+                    }} 
+                />
+            )}
+            {isDietPlanViewOpen && selectedConsultationForDietPlan && (
+                <AdminDietPlanView 
+                    consultation={selectedConsultationForDietPlan} 
+                    consultationId={selectedConsultationForDietPlan._id || selectedConsultationForDietPlan.id}
+                    onClose={() => {
+                        setIsDietPlanViewOpen(false);
+                        setSelectedConsultationForDietPlan(null);
+                    }} 
+                />
+            )}
         </div>
     );
 };

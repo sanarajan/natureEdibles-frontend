@@ -6,11 +6,14 @@ import { toast } from 'react-toastify';
 import { useSelector } from 'react-redux';
 import type { RootState } from '../../../store';
 import './ConsultationBooking.css';
+import Pagination from '../../../components/Pagination/Pagination';
 
 const UserConsultationHistory: React.FC = () => {
     const { data: user } = useSelector((state: RootState) => state.auth.user);
     const [consultations, setConsultations] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 10;
 
     useEffect(() => {
         document.body.classList.add('consultation-page-body');
@@ -165,7 +168,8 @@ const UserConsultationHistory: React.FC = () => {
                                         <Link to="/consultation-booking" className="btn btn-outline-primary mt-2">Book a Consultation</Link>
                                     </div>
                                 ) : (
-                                    <div className="table-responsive table-style-1">
+                                    <>
+                                        <div className="table-responsive table-style-1">
                                         <table className="table table-hover align-middle">
                                             <thead>
                                                 <tr>
@@ -178,8 +182,8 @@ const UserConsultationHistory: React.FC = () => {
                                                 </tr>
                                             </thead>
                                             <tbody>
-                                                {consultations.map(c => (
-                                                    <tr key={c._id}>
+                                                {consultations.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map(c => (
+                                                    <tr key={c.id || c._id}>
                                                         <td>{c.fullName || '-'}</td>
                                                         <td>{formatDate(c.appointmentDate)}<br/><small className="text-muted">{c.appointmentTime}</small></td>
                                                         <td className="text-truncate" style={{ maxWidth: '150px' }} title={c.mainHealthIssue}>{c.mainHealthIssue}</td>
@@ -188,19 +192,36 @@ const UserConsultationHistory: React.FC = () => {
                                                         </td>
                                                         <td>{getPaymentBadge(c)}</td>
                                                         <td className="text-end">
-                                                            <button 
-                                                                className="btn btn-sm btn-outline-primary px-2"
-                                                                onClick={() => setSelectedConsultation(c)}
-                                                                title="View Details"
-                                                            >
-                                                                <Eye size={18} />
-                                                            </button>
+                                                            <div className="d-flex justify-content-end gap-2">
+                                                                <button 
+                                                                    className="btn btn-sm btn-outline-primary px-2"
+                                                                    onClick={() => setSelectedConsultation(c)}
+                                                                    title="View Details"
+                                                                >
+                                                                    <Eye size={18} />
+                                                                </button>
+                                                                {c.status?.toUpperCase() === 'COMPLETED' && (
+                                                                    <Link 
+                                                                        to={`/account/consultations/${c.id || c._id}/diet-plan`}
+                                                                        className="btn btn-sm btn-success px-3"
+                                                                        title="View Diet Plan"
+                                                                    >
+                                                                        Diet Plan
+                                                                    </Link>
+                                                                )}
+                                                            </div>
                                                         </td>
                                                     </tr>
                                                 ))}
                                             </tbody>
                                         </table>
                                     </div>
+                                    <Pagination
+                                        currentPage={currentPage}
+                                        totalPages={Math.ceil(consultations.length / itemsPerPage)}
+                                        onPageChange={setCurrentPage}
+                                    />
+                                    </>
                                 )}
                             </div>
                         </section>

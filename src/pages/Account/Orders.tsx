@@ -3,12 +3,15 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import type { RootState } from '../../store';
 import userApiClient from '../../services/userApiClient';
+import Pagination from '../../components/Pagination/Pagination';
 
 const Orders: React.FC = () => {
     const navigate = useNavigate();
     const { isAuthenticated, data: user } = useSelector((state: RootState) => state.auth.user);
     const [orders, setOrders] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 10;
 
     useEffect(() => {
         if (!isAuthenticated && !localStorage.getItem('user_accessToken')) {
@@ -102,16 +105,16 @@ const Orders: React.FC = () => {
                                             <li><Link to="/account">Dashboard</Link></li>
                                             <li><Link to="/account/orders" className="active">Orders</Link></li>
                                             <li><Link to="/account/consultations">Consultation History</Link></li>
-                                            <li><Link to="#">Downloads</Link></li>
-                                            <li><Link to="#">Return request</Link></li>
+                                            {/* <li><Link to="#">Downloads</Link></li>
+                                            <li><Link to="#">Return request</Link></li> */}
                                         </ul>
                                         <div className="nav-title bg-light">ACCOUNT SETTINGS</div>
                                         <ul className="account-info-list">
                                             <li><Link to="/account/profile">Profile</Link></li>
                                             <li><Link to="/account/address">Address</Link></li>
-                                            <li><Link to="#">Shipping methods</Link></li>
+                                            {/* <li><Link to="#">Shipping methods</Link></li>
                                             <li><Link to="#">Payment Methods</Link></li>
-                                            <li><Link to="#">Review</Link></li>
+                                            <li><Link to="#">Review</Link></li> */}
                                         </ul>
                                     </div>
                                 </div>
@@ -137,7 +140,7 @@ const Orders: React.FC = () => {
                                                     <td colSpan={5} className="py-4">Loading your orders...</td>
                                                 </tr>
                                             ) : orders.length > 0 ? (
-                                                orders.map((order, idx) => (
+                                                orders.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((order, idx) => (
                                                     <tr key={order._id || idx}>
                                                         <td><span className="fw-medium text-dark">{order.orderId}</span></td>
                                                         <td>{formatDate(order.createdAt)}</td>
@@ -173,6 +176,11 @@ const Orders: React.FC = () => {
                                         </tbody>
                                     </table>
                                 </div>
+                                <Pagination
+                                    currentPage={currentPage}
+                                    totalPages={Math.ceil(orders.length / itemsPerPage)}
+                                    onPageChange={setCurrentPage}
+                                />
                             </div>
                         </section>
                     </div>

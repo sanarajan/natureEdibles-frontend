@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import adminApiClient from '../../../services/adminApiClient';
 import { toast } from 'react-toastify';
-import { Loader2, UploadCloud, RefreshCw, Plus, Edit, Trash2, CheckCircle2, XCircle } from 'lucide-react';
+import { Loader2, UploadCloud, RefreshCw, Plus, Edit, Trash2, CheckCircle2, XCircle, Eye } from 'lucide-react';
 import Swal from 'sweetalert2';
 import './PaymentSettings.css';
 
@@ -411,22 +412,12 @@ const PaymentSettings: React.FC = () => {
                                         const isLocked = acc.usedCount > 0;
                                         
                                         const actionButtons = (
-                                            <>
-                                                <button 
-                                                    className={`btn btn-sm ${isLocked ? 'btn-outline-secondary' : 'btn-outline-primary'} me-2`}
-                                                    onClick={() => !isLocked && openEditForm(acc)}
-                                                    disabled={isLocked}
-                                                >
-                                                    <Edit className="w-4 h-4" />
-                                                </button>
-                                                <button 
-                                                    className={`btn btn-sm ${isLocked ? 'btn-outline-secondary' : 'btn-outline-danger'}`}
-                                                    onClick={() => !isLocked && handleDelete(acc._id)}
-                                                    disabled={isLocked}
-                                                >
-                                                    <Trash2 className="w-4 h-4" />
-                                                </button>
-                                            </>
+                                            <Link 
+                                                to={`/admin/payment-settings/${acc._id}`}
+                                                className="btn btn-sm btn-outline-info"
+                                            >
+                                                <Eye className="w-4 h-4 me-1 d-inline align-text-bottom" /> View
+                                            </Link>
                                         );
 
                                         return (
@@ -464,16 +455,7 @@ const PaymentSettings: React.FC = () => {
                                                             Set as Default
                                                         </button>
                                                     )}
-                                                    {isLocked ? (
-                                                        <div 
-                                                            className="d-inline-block cursor-not-allowed" 
-                                                            title="This payment account has already been used and cannot be modified."
-                                                        >
-                                                            {actionButtons}
-                                                        </div>
-                                                    ) : (
-                                                        actionButtons
-                                                    )}
+                                                    {actionButtons}
                                                 </td>
                                             </tr>
                                         );

@@ -731,7 +731,7 @@ const Checkout: React.FC = () => {
                                 </table>
 
                                 {/* Coupon / Referral Section */}
-                                <div className="coupon-input-container">
+                                {/* <div className="coupon-input-container">
                                     <h6 className="mb-2">Apply Coupon / Referral</h6>
                                     
                                     {appliedComboOffer && (
@@ -787,7 +787,7 @@ const Checkout: React.FC = () => {
                                             </span>
                                         </div>
                                     )}
-                                </div>
+                                </div> */}
 
                                 <div className="accordion dz-accordion accordion-sm mt-3">
                                     {/* <div className="accordion-item">

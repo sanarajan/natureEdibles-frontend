@@ -1,16 +1,21 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Search, Filter, Download, Eye, FileText } from 'lucide-react';
 import apiClient from '../../../services/adminApiClient';
 import { toast } from 'react-toastify';
 import { formatDate } from '../../../utils/formatDate';
 import '../../../styles/admin-pages.css';
+import Pagination from '../../../components/Pagination/Pagination';
 
 const AdminOrders: React.FC = () => {
     const navigate = useNavigate();
+    const location = useLocation();
+    const isCompletedRoute = location.pathname.includes('/completed');
     const [orders, setOrders] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 10;
 
     // Status Update State
     const [updatingStatus, setUpdatingStatus] = useState(false);
@@ -33,7 +38,6 @@ const AdminOrders: React.FC = () => {
     const [refundAmount, setRefundAmount] = useState(0);
 
     useEffect(() => {
-        fetchOrders();
         fetchAgencies();
 
         // Close dropdown on outside click
@@ -41,6 +45,14 @@ const AdminOrders: React.FC = () => {
         document.addEventListener('click', handleClickOutside);
         return () => document.removeEventListener('click', handleClickOutside);
     }, []);
+
+    useEffect(() => {
+        setCurrentPage(1);
+        const delayDebounceFn = setTimeout(() => {
+            fetchOrders(searchTerm);
+        }, 300);
+        return () => clearTimeout(delayDebounceFn);
+    }, [searchTerm, isCompletedRoute]);
 
     // Tracking URL Logic (Replicated from AdminOrderDetails)
     useEffect(() => {
@@ -83,10 +95,14 @@ const AdminOrders: React.FC = () => {
         }
     };
 
-    const fetchOrders = async () => {
+    const fetchOrders = async (currentSearch = searchTerm) => {
         setLoading(true);
         try {
-            const res = await apiClient.get('/admin/orders');
+            let endpoint = isCompletedRoute ? '/admin/orders?status=DELIVERED' : '/admin/orders';
+            if (currentSearch) {
+                endpoint += (endpoint.includes('?') ? '&' : '?') + `search=${encodeURIComponent(currentSearch)}`;
+            }
+            const res = await apiClient.get(endpoint);
             if (res.data.success) {
                 setOrders(res.data.data);
             }
@@ -334,24 +350,22 @@ const AdminOrders: React.FC = () => {
         );
     };
 
-    const filteredOrders = orders.filter(order =>
-        order.orderId.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (order.userId?.displayName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (order.userId?.email || '').toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    const filteredOrders = orders;
+    const totalPages = Math.ceil(filteredOrders.length / itemsPerPage);
+    const displayedOrders = filteredOrders.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
     return (
         <div className="admin-page-container">
             <div className="page-header">
                 <h1 className="page-title">Orders</h1>
-                <div className="header-actions">
+                {/* <div className="header-actions">
                     <button className="btn-primary-admin secondary" style={{ backgroundColor: '#fff', color: '#64748b', border: '1px solid #e2e8f0', boxShadow: 'none' }}>
                         <Download size={18} /> Export CSV
                     </button>
                     <button className="btn-primary-admin">
                         <FileText size={18} /> New Order
                     </button>
-                </div>
+                </div> */}
             </div>
 
             <div className="admin-card">
@@ -389,12 +403,12 @@ const AdminOrders: React.FC = () => {
                                 <tr>
                                     <td colSpan={7} style={{ textAlign: 'center', padding: '2rem' }}>Loading orders...</td>
                                 </tr>
-                            ) : filteredOrders.length === 0 ? (
+                            ) : displayedOrders.length === 0 ? (
                                 <tr>
                                     <td colSpan={7} style={{ textAlign: 'center', padding: '2rem' }}>No orders found</td>
                                 </tr>
                             ) : (
-                                filteredOrders.map((order) => (
+                                displayedOrders.map((order) => (
                                     <tr key={order._id}>
                                         <td style={{ fontWeight: 700, color: 'var(--admin-primary)' }}>{order.orderId}</td>
                                         <td>
@@ -416,7 +430,7 @@ const AdminOrders: React.FC = () => {
                                             {getStatusBadge(order.globalOrderStatus || 'PLACED', order)}
 
                                             {openDropdownId === order._id && (
-                                                <div className={`status-dropdown-menu ${filteredOrders.indexOf(order) >= filteredOrders.length - 3 && filteredOrders.length > 3 ? 'open-top' : ''}`}>
+                                                <div className={`status-dropdown-menu ${displayedOrders.indexOf(order) >= displayedOrders.length - 3 && displayedOrders.length > 3 ? 'open-top' : ''}`}>
                                                     <div className="dropdown-title">Quick Status Change</div>
 
                                                     {/* Show Reason if available */}
@@ -480,6 +494,12 @@ const AdminOrders: React.FC = () => {
                         </tbody>
                     </table>
                 </div>
+
+                <Pagination
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    onPageChange={setCurrentPage}
+                />
             </div>
 
             {/* Status Update Modals */}

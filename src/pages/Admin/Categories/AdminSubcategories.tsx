@@ -4,6 +4,7 @@ import { toast } from 'react-toastify';
 import apiClient from '../../../services/adminApiClient';
 import { formatDate } from '../../../utils/formatDate';
 import '../../../styles/admin-pages.css';
+import Pagination from '../../../components/Pagination/Pagination';
 
 interface Category {
     _id: string;
@@ -23,6 +24,9 @@ const AdminSubcategories: React.FC = () => {
     const [subcategories, setSubcategories] = useState<SubCategory[]>([]);
     const [categories, setCategories] = useState<Category[]>([]);
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [searchTerm, setSearchTerm] = useState('');
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 10;
 
     // Form State
     const [subcategoryName, setSubcategoryName] = useState('');
@@ -175,6 +179,14 @@ const AdminSubcategories: React.FC = () => {
         );
     };
 
+    const filteredSubcategories = subcategories.filter(sub =>
+        sub.subcategoryName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (sub.categoryId?.categoryName && sub.categoryId.categoryName.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (sub.description && sub.description.toLowerCase().includes(searchTerm.toLowerCase()))
+    );
+    const totalPages = Math.ceil(filteredSubcategories.length / itemsPerPage);
+    const displayedSubcategories = filteredSubcategories.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+
     return (
         <div className="admin-page-container">
             <div className="page-header">
@@ -190,7 +202,15 @@ const AdminSubcategories: React.FC = () => {
                 <div className="card-filter-header">
                     <div className="search-wrapper">
                         <Search size={18} className="search-icon" />
-                        <input type="text" placeholder="Search subcategories..." />
+                        <input
+                            type="text"
+                            placeholder="Search subcategories..."
+                            value={searchTerm}
+                            onChange={(e) => {
+                                setSearchTerm(e.target.value);
+                                setCurrentPage(1);
+                            }}
+                        />
                     </div>
                 </div>
 
@@ -207,7 +227,7 @@ const AdminSubcategories: React.FC = () => {
                             </tr>
                         </thead>
                         <tbody>
-                            {subcategories.map((sub) => (
+                            {displayedSubcategories.map((sub) => (
                                 <tr key={sub._id}>
                                     <td style={{ fontWeight: 600 }}>{sub.subcategoryName}</td>
                                     <td>
@@ -234,7 +254,7 @@ const AdminSubcategories: React.FC = () => {
                                     </td>
                                 </tr>
                             ))}
-                            {subcategories.length === 0 && (
+                            {displayedSubcategories.length === 0 && (
                                 <tr>
                                     <td colSpan={6} style={{ textAlign: 'center', padding: '30px' }}>
                                         No subcategories found. Click "Add Subcategory" to create one.
@@ -244,6 +264,12 @@ const AdminSubcategories: React.FC = () => {
                         </tbody>
                     </table>
                 </div>
+
+                <Pagination
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    onPageChange={setCurrentPage}
+                />
             </div>
 
             {isModalOpen && (

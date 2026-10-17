@@ -280,9 +280,9 @@ const Header: React.FC = () => {
                                 <li className="has-mega-menu sub-menu-down">
                                     <Link to="/shop" onClick={closeNavbar}><span>Shop</span></Link>
                                 </li>
-                                <li className="has-mega-menu sub-menu-down">
+                                {/* <li className="has-mega-menu sub-menu-down">
                                     <Link to="/offers" onClick={closeNavbar}><span>Offers</span></Link>
-                                </li>
+                                </li> */}
                                 <li className="has-mega-menu sub-menu-down">
                                     <Link to="/about" onClick={closeNavbar}><span>About Us</span></Link>
                                 </li>

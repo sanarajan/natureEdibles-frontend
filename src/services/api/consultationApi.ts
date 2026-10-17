@@ -52,3 +52,8 @@ export const updateConsultationPayment = async (id: string, upiReference: string
     const response = await userApiClient.put(`/user/consultation/${id}/payment`, { upiReference });
     return response.data;
 };
+
+export const updateConsultationDate = async (id: string, appointmentDate: string) => {
+    const response = await adminApiClient.put(`/admin/consultation/bookings/${id}/date`, { appointmentDate });
+    return response.data;
+};

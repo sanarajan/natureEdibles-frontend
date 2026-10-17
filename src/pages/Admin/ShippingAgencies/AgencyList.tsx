@@ -4,10 +4,13 @@ import { Plus, Edit, Trash2 } from 'lucide-react';
 import adminApiClient from '../../../services/adminApiClient';
 import { toast } from 'react-toastify';
 import Swal from 'sweetalert2';
+import Pagination from '../../../components/Pagination/Pagination';
 
 const AgencyList: React.FC = () => {
     const [agencies, setAgencies] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 10;
 
     const fetchAgencies = async () => {
         try {
@@ -48,6 +51,9 @@ const AgencyList: React.FC = () => {
         }
     };
 
+    const totalPages = Math.ceil(agencies.length / itemsPerPage);
+    const displayedAgencies = agencies.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+
     return (
         <div className="admin-page-container">
             <div className="page-header">
@@ -74,9 +80,9 @@ const AgencyList: React.FC = () => {
                         <tbody>
                             {loading ? (
                                 <tr><td colSpan={4} className="text-center p-5">Loading agencies...</td></tr>
-                            ) : agencies.length === 0 ? (
+                            ) : displayedAgencies.length === 0 ? (
                                 <tr><td colSpan={4} className="text-center p-5">No agencies found. Add your first delivery partner.</td></tr>
-                            ) : agencies.map((agency) => (
+                            ) : displayedAgencies.map((agency) => (
                                 <tr key={agency._id}>
                                     <td className="fw-bold text-dark">{agency.name}</td>
                                     <td>
@@ -104,6 +110,12 @@ const AgencyList: React.FC = () => {
                         </tbody>
                     </table>
                 </div>
+
+                <Pagination
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    onPageChange={setCurrentPage}
+                />
             </div>
         </div>
     );

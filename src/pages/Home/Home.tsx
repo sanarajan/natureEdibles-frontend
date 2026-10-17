@@ -245,15 +245,60 @@ const Home: React.FC = () => {
                                         </div>
                                     </div>
                                 </div>
+                                <div className="row gx-0 mt-4 d-none d-md-flex" style={{ gap: '40px' }}>
+                                    <div className="wow fadeInUp position-relative" data-wow-delay="1.0s" style={{ width: 'clamp(110px, 12vw, 150px)', height: 'clamp(110px, 12vw, 150px)', borderRadius: '50%', border: '1px solid rgba(13, 119, 94, 0.15)', overflow: 'hidden', backgroundColor: '#fff', boxShadow: '0px 10px 20px rgba(0,0,0,0.05)' }}>
+                                        <img src="/images/products/item1.png" alt="Product 1" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                    </div>
+                                    <div className="wow fadeInUp position-relative" data-wow-delay="1.2s" style={{ width: 'clamp(110px, 12vw, 150px)', height: 'clamp(110px, 12vw, 150px)', borderRadius: '50%', border: '1px solid rgba(13, 119, 94, 0.15)', overflow: 'hidden', backgroundColor: '#fff', boxShadow: '0px 10px 20px rgba(0,0,0,0.05)' }}>
+                                        <img src="/images/products/item2.png" alt="Product 2" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                    </div>
+                                </div>
                             </div>
-                            <div className="col-md-12 col-lg-5 align-self-center">
+                            <div className="col-md-12 col-lg-5 align-self-center position-relative">
                                 <div className="home-hero-product-area wow slideInRight" data-wow-delay="0.1s" data-wow-duration="1.5s" style={{ position: 'relative', zIndex: 2, padding: '20px', display: 'flex', justifyContent: 'center' }}>
-                                    <img 
-                                        src={collection2} 
-                                        alt="Main Product" 
-                                        className="home-hero-main-product"
-                                        style={{ width: '100%', maxWidth: '480px', height: 'auto', maxHeight: '75vh', objectFit: 'contain', filter: 'drop-shadow(0px 15px 25px rgba(0,0,0,0.15))', position: 'relative', zIndex: 5 }}
-                                    />
+                                    
+                                    <div style={{ position: 'relative', width: '100%', maxWidth: '480px' }}>
+                                        <div className="img-preview" style={{ 
+                                            position: 'relative', 
+                                            zIndex: 5, 
+                                            borderRadius: '340px 340px 150px 150px', 
+                                            border: '15px solid #ffffff', 
+                                            background: '#0D775E',
+                                            boxShadow: '0 25px 50px rgba(0,0,0,0.15)',
+                                            display: 'flex',
+                                            justifyContent: 'center',
+                                            alignItems: 'center',
+                                            overflow: 'hidden',
+                                            width: '100%',
+                                            aspectRatio: '0.65 / 1'
+                                        }}>
+                                            <img 
+                                                src="/images/biji-consultation.jpg" 
+                                                alt="Nature Edibles Consultation" 
+                                                className="home-hero-main-product"
+                                                style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center' }}
+                                            />
+                                        </div>
+                                        <div style={{ position: 'absolute', bottom: '2%', right: '-5%', zIndex: 10 }}>
+                                            <a className="animation-btn popup-youtube" href="https://www.youtube.com/watch?v=GNRj16pfsFY">
+                                                <div className="text-row word-rotate-box c-black bg-blur">
+                                                    {"EXPLORE MORE COLLECTION ".split('').map((char, i, arr) => (
+                                                        <span
+                                                            key={i}
+                                                            className="text__char"
+                                                            style={{ '--char-rotate': `${(i * 360) / arr.length}deg` } as React.CSSProperties}
+                                                        >
+                                                            {char}
+                                                        </span>
+                                                    ))}
+                                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" className="badge__emoji" xmlns="http://www.w3.org/2000/svg">
+                                                        <path d="M8 5V19L19 12L8 5Z" fill="#0D775E" />
+                                                    </svg>
+                                                </div>
+                                            </a>
+                                        </div>
+                                    </div>
+
                                 </div>
                             </div>
                         </div>
