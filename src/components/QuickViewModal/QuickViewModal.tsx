@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import type { RootState } from '../../store';
 import { handleAddToCartGlobal, handleToggleWishlistGlobal } from '../../utils/CartHelper';
+import { getStockInfo } from '../../pages/Shop/Shop';
 
 // Asset Imports
 import product1 from '../../assets/images/organic/authentic-organic-staples-24.jpeg';
@@ -15,6 +16,8 @@ interface Product {
     offerPrice?: number;
     appliedOffer?: any;
     images: string[];
+    stock?: number;
+    isActive?: boolean;
     categoryId?: { _id: string; categoryName: string };
     subcategoryId?: { _id: string; subcategoryName: string };
     featured?: boolean;
@@ -35,7 +38,10 @@ const QuickViewModal: React.FC<QuickViewModalProps> = ({ product, onClose }) => 
 
     if (!product) return null;
 
+    const stockInfo = getStockInfo(product.stock);
+
     const handleAddToCart = () => {
+        if (stockInfo.isOutOfStock) return;
         handleAddToCartGlobal(product, qty, isUser, navigate, false);
         onClose();
         navigate('/shop-cart');
@@ -55,7 +61,15 @@ const QuickViewModal: React.FC<QuickViewModalProps> = ({ product, onClose }) => 
                     ×
                 </button>
 
-                <div className="quick-view-image-container">
+                <div className="quick-view-image-container" style={{ position: 'relative' }}>
+                    {(product.featured || product.isBestSeller || product.isPopular || product.isTrending) && (
+                        <div className="shop-badge-wrap" style={{ position: 'absolute', top: '15px', left: '15px', zIndex: 10, display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                            {product.featured && <span className="shop-featured-badge">FEATURED</span>}
+                            {product.isBestSeller && <span className="shop-offer-badge">BEST SELLER</span>}
+                            {product.isPopular && <span className="shop-offer-badge" style={{ background: '#0D6EFD', color: '#fff' }}>POPULAR</span>}
+                            {product.isTrending && <span className="shop-offer-badge" style={{ background: '#DC3545', color: '#fff' }}>TRENDING</span>}
+                        </div>
+                    )}
                     <img 
                         src={product.images && product.images.length > 0 ? product.images[0] : product1} 
                         alt={product.productName} 
@@ -79,17 +93,52 @@ const QuickViewModal: React.FC<QuickViewModalProps> = ({ product, onClose }) => 
                         Crafted with traditional Ayurvedic wisdom, this product ensures high quality results.
                     </p>
 
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', border: '1px solid #ddd', borderRadius: '4px' }}>
-                            <button onClick={() => setQty(q => Math.max(1, q - 1))} style={{ width: '40px', height: '40px', border: 'none', background: 'none', cursor: 'pointer' }}>-</button>
-                            <span style={{ width: '40px', textAlign: 'center', fontSize: '16px' }}>{qty}</span>
-                            <button onClick={() => setQty(q => q + 1)} style={{ width: '40px', height: '40px', border: 'none', background: 'none', cursor: 'pointer' }}>+</button>
+                    <div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', border: '1px solid #ddd', borderRadius: '4px' }}>
+                                <button 
+                                    onClick={() => setQty(q => Math.max(1, q - 1))} 
+                                    disabled={stockInfo.isOutOfStock}
+                                    style={{ width: '40px', height: '40px', border: 'none', background: 'none', cursor: stockInfo.isOutOfStock ? 'not-allowed' : 'pointer' }}>-</button>
+                                <span style={{ width: '40px', textAlign: 'center', fontSize: '16px' }}>{stockInfo.isOutOfStock ? 0 : qty}</span>
+                                <button 
+                                    onClick={() => setQty(q => (product.stock !== undefined ? Math.min(product.stock, q + 1) : q + 1))} 
+                                    disabled={stockInfo.isOutOfStock || (product.stock !== undefined && qty >= product.stock)}
+                                    style={{ width: '40px', height: '40px', border: 'none', background: 'none', cursor: (stockInfo.isOutOfStock || (product.stock !== undefined && qty >= product.stock)) ? 'not-allowed' : 'pointer' }}>+</button>
+                            </div>
+                            <button 
+                                disabled={stockInfo.isOutOfStock}
+                                onClick={handleAddToCart}
+                                style={{ 
+                                    flex: 1, 
+                                    background: stockInfo.isOutOfStock ? '#94a3b8' : '#1a1a1a', 
+                                    color: '#fff', 
+                                    border: 'none', 
+                                    height: '42px', 
+                                    borderRadius: '4px', 
+                                    fontWeight: 600, 
+                                    cursor: stockInfo.isOutOfStock ? 'not-allowed' : 'pointer' }}>
+                                {stockInfo.isOutOfStock ? 'OUT OF STOCK' : 'ADD TO CART'}
+                            </button>
                         </div>
-                        <button 
-                            onClick={handleAddToCart}
-                            style={{ flex: 1, background: '#1a1a1a', color: '#fff', border: 'none', height: '42px', borderRadius: '4px', fontWeight: 600, cursor: 'pointer' }}>
-                            ADD TO CART
-                        </button>
+                        <div style={{
+                            fontSize: '12px',
+                            fontWeight: 500,
+                            marginTop: '8px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '5px',
+                            color: stockInfo.isOutOfStock ? '#dc3545' : stockInfo.isLowStock ? '#d97706' : '#2e7d32'
+                        }}>
+                            <span style={{
+                                width: '6px',
+                                height: '6px',
+                                borderRadius: '50%',
+                                backgroundColor: stockInfo.isOutOfStock ? '#dc3545' : stockInfo.isLowStock ? '#d97706' : '#2e7d32',
+                                display: 'inline-block'
+                            }}></span>
+                            <span>{stockInfo.label}</span>
+                        </div>
                     </div>
 
                     <button 

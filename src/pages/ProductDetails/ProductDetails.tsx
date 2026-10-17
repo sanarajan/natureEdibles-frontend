@@ -75,7 +75,15 @@ const ProductDetails: React.FC = () => {
                 <div className="container-fluid">
                     <div className="row">
                         <div className="col-xxl-6 col-xl-6 col-lg-6 col-md-6">
-                            <div className="dz-product-detail style-1 sticky-top">
+                            <div className="dz-product-detail style-1 sticky-top" style={{ position: 'relative' }}>
+                                {(product.featured || product.isBestSeller || product.isPopular || product.isTrending) && (
+                                    <div className="shop-badge-wrap" style={{ position: 'absolute', top: '20px', left: '20px', zIndex: 10, display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                                        {product.featured && <span className="shop-featured-badge">FEATURED</span>}
+                                        {product.isBestSeller && <span className="shop-offer-badge">BEST SELLER</span>}
+                                        {product.isPopular && <span className="shop-offer-badge" style={{ background: '#0D6EFD', color: '#fff' }}>POPULAR</span>}
+                                        {product.isTrending && <span className="shop-offer-badge" style={{ background: '#DC3545', color: '#fff' }}>TRENDING</span>}
+                                    </div>
+                                )}
                                 <div className="swiper-btn-center-lr">
                                     <div className="swiper product-gallery-swiper2">
                                         <div className="swiper-wrapper">
@@ -155,9 +163,6 @@ const ProductDetails: React.FC = () => {
                                                             )}
                                                         </span>
                                                     </div>
-                                                    <span className={`badge ${stockBadge} ms-3`} style={{ fontSize: '13px', padding: '6px 12px', borderRadius: '4px' }}>
-                                                        {stockLabel}
-                                                    </span>
                                                 </div>
 
                                                 <div className="product-num">
@@ -175,6 +180,25 @@ const ProductDetails: React.FC = () => {
                                                                 setQuantity(Math.min(maxAllowed, Math.max(1, val)));
                                                             }}
                                                         />
+                                                    </div>
+                                                    <div style={{
+                                                        fontSize: '13px',
+                                                        fontWeight: 500,
+                                                        marginTop: '8px',
+                                                        marginBottom: '16px',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        gap: '6px',
+                                                        color: !isPurchasable ? '#dc3545' : isLow ? '#d97706' : '#2e7d32'
+                                                    }}>
+                                                        <span style={{
+                                                            width: '6px',
+                                                            height: '6px',
+                                                            borderRadius: '50%',
+                                                            backgroundColor: !isPurchasable ? '#dc3545' : isLow ? '#d97706' : '#2e7d32',
+                                                            display: 'inline-block'
+                                                        }}></span>
+                                                        <span>{stockLabel}</span>
                                                     </div>
                                                 </div>
 

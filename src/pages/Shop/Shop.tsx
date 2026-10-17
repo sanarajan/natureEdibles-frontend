@@ -95,11 +95,11 @@ const QuickViewModal = ({ prod, onClose, inWishlist, onToggleWishlist, handleAdd
                 <div className="quick-view-image-container">
                     {/* Badges in Quick View */}
                     {(prod.featured || prod.isBestSeller || prod.isPopular || prod.isTrending) && (
-                        <div className="shop-badge-wrap" style={{ position: 'absolute', top: '20px', left: '20px', zIndex: 10, display: 'flex', flexDirection: 'column', gap: '5px' }}>
-                            {prod.featured && <span className="shop-featured-badge" style={{ display: 'inline-block', background: '#FFC107', color: '#000', padding: '4px 8px', fontSize: '10px', fontWeight: 700, borderRadius: '2px' }}>FEATURED</span>}
-                            {prod.isBestSeller && <span className="shop-offer-badge" style={{ display: 'inline-block', background: '#38996E', color: '#fff', padding: '4px 8px', fontSize: '10px', fontWeight: 700, borderRadius: '2px' }}>BEST SELLER</span>}
-                            {prod.isPopular && <span className="shop-offer-badge" style={{ display: 'inline-block', background: '#0D6EFD', color: '#fff', padding: '4px 8px', fontSize: '10px', fontWeight: 700, borderRadius: '2px' }}>POPULAR</span>}
-                            {prod.isTrending && <span className="shop-offer-badge" style={{ display: 'inline-block', background: '#DC3545', color: '#fff', padding: '4px 8px', fontSize: '10px', fontWeight: 700, borderRadius: '2px' }}>TRENDING</span>}
+                        <div className="shop-badge-wrap" style={{ position: 'absolute', top: '15px', left: '15px', zIndex: 10, display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                            {prod.featured && <span className="shop-featured-badge">FEATURED</span>}
+                            {prod.isBestSeller && <span className="shop-offer-badge">BEST SELLER</span>}
+                            {prod.isPopular && <span className="shop-offer-badge" style={{ background: '#0D6EFD', color: '#fff' }}>POPULAR</span>}
+                            {prod.isTrending && <span className="shop-offer-badge" style={{ background: '#DC3545', color: '#fff' }}>TRENDING</span>}
                         </div>
                     )}
                     <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'transform 0.5s ease' }}
@@ -116,9 +116,6 @@ const QuickViewModal = ({ prod, onClose, inWishlist, onToggleWishlist, handleAdd
                         <StarRating count={4} />
                         <span style={{ color: '#444', fontSize: '14px' }}>4.7 Rating</span>
                         <span style={{ color: '#888', fontSize: '14px' }}>(150 customer reviews)</span>
-                        <span className={`badge ${stockInfo.badgeClass}`} style={{ fontSize: '12px', padding: '4px 8px', borderRadius: '4px' }}>
-                            {stockInfo.label}
-                        </span>
                     </div>
 
                     <p style={{ margin: 0, fontSize: '15px', color: '#555', lineHeight: '1.6' }}>
@@ -149,6 +146,24 @@ const QuickViewModal = ({ prod, onClose, inWishlist, onToggleWishlist, handleAdd
                                     disabled={isOutOfStock || (prod.stock !== undefined && qty >= prod.stock)}
                                     style={{ width: '38px', height: '38px', border: '1px solid #333', background: '#333', color: '#fff', fontSize: '18px', cursor: (isOutOfStock || (prod.stock !== undefined && qty >= prod.stock)) ? 'not-allowed' : 'pointer' }}
                                 >+</button>
+                            </div>
+                            <div style={{
+                                fontSize: '12px',
+                                fontWeight: 500,
+                                marginTop: '8px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '5px',
+                                color: stockInfo.isOutOfStock ? '#dc3545' : stockInfo.isLowStock ? '#d97706' : '#2e7d32'
+                            }}>
+                                <span style={{
+                                    width: '6px',
+                                    height: '6px',
+                                    borderRadius: '50%',
+                                    backgroundColor: stockInfo.isOutOfStock ? '#dc3545' : stockInfo.isLowStock ? '#d97706' : '#2e7d32',
+                                    display: 'inline-block'
+                                }}></span>
+                                <span>{stockInfo.label}</span>
                             </div>
                         </div>
                     </div>
@@ -756,8 +771,11 @@ const Shop: React.FC = () => {
                                                                     <div>
                                                                         <h4 className="title mb-0">
                                                                             <Link to={`/product/${prod._id}`}>{prod.productName}</Link>
-                                                                            <span className={`badge ${stockInfo.badgeClass} ms-2`} style={{ fontSize: '11px', padding: '3px 7px', fontWeight: 600 }}>{stockInfo.label}</span>
                                                                         </h4>
+                                                                        <div style={{ fontSize: '12px', fontWeight: 500, margin: '3px 0 6px', color: stockInfo.isOutOfStock ? '#dc3545' : stockInfo.isLowStock ? '#d97706' : '#2e7d32', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                                                                            <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: stockInfo.isOutOfStock ? '#dc3545' : stockInfo.isLowStock ? '#d97706' : '#2e7d32', display: 'inline-block' }}></span>
+                                                                            {stockInfo.label}
+                                                                        </div>
                                                                         <ul className="dz-tags"><li><a href="javascript:void(0);">{prod.categoryId?.categoryName}</a></li></ul>
                                                                     </div>
                                                                     <div className="review-num"><StarRating count={4} /><span> 150 Review</span></div>
@@ -796,12 +814,10 @@ const Shop: React.FC = () => {
                                                         <div className="shop-card">
                                                             <div className="dz-media media-overlay">
                                                                 <img src={prod.images && prod.images.length > 0 ? prod.images[0] : product1} alt={prod.productName} />
-                                                                {(prod.featured || prod.isBestSeller || stockInfo.isOutOfStock || stockInfo.isLowStock) && (
+                                                                {(prod.featured || prod.isBestSeller) && (
                                                                     <div className="shop-badge-wrap">
                                                                         {prod.featured && <span className="shop-featured-badge">FEATURED</span>}
                                                                         {prod.isBestSeller && <span className="shop-offer-badge">BEST SELLER</span>}
-                                                                        {stockInfo.isOutOfStock && <span className="shop-offer-badge" style={{ background: '#dc3545' }}>OUT OF STOCK</span>}
-                                                                        {stockInfo.isLowStock && <span className="shop-offer-badge" style={{ background: '#eab308', color: '#000' }}>LOW STOCK</span>}
                                                                     </div>
                                                                 )}
                                                                 <div className="shop-meta">
@@ -820,7 +836,11 @@ const Shop: React.FC = () => {
                                                                 </div>
                                                             </div>
                                                             <div className="dz-content">
-                                                                <h5 className="title"><Link to={`/product/${prod._id}`}>{prod.productName}</Link></h5>
+                                                                <h5 className="title mb-0"><Link to={`/product/${prod._id}`}>{prod.productName}</Link></h5>
+                                                                <div style={{ fontSize: '12px', fontWeight: 500, margin: '3px 0 6px', color: stockInfo.isOutOfStock ? '#dc3545' : stockInfo.isLowStock ? '#d97706' : '#2e7d32', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                                                                    <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: stockInfo.isOutOfStock ? '#dc3545' : stockInfo.isLowStock ? '#d97706' : '#2e7d32', display: 'inline-block' }}></span>
+                                                                    {stockInfo.label}
+                                                                </div>
                                                                 <div className="d-flex align-items-center justify-content-between">
                                                                     <h6 className="price mb-0">
                                                                         ₹{prod.offerPrice ? prod.offerPrice.toFixed(2) : prod.price.toFixed(2)}
@@ -828,7 +848,6 @@ const Shop: React.FC = () => {
                                                                             <del className="ms-2 text-muted" style={{ fontSize: '0.85em' }}>₹{prod.price.toFixed(2)}</del>
                                                                         )}
                                                                     </h6>
-                                                                    <span className={`badge ${stockInfo.badgeClass}`} style={{ fontSize: '10px', padding: '3px 6px' }}>{stockInfo.label}</span>
                                                                 </div>
                                                                 <div className="shop-cart-btn">
                                                                     {stockInfo.isOutOfStock ? (
