@@ -1,14 +1,57 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import userApiClient from '../../services/userApiClient';
 import type { RootState } from '../../store';
 import product1 from '../../assets/images/organic/authentic-organic-staples-19.jpeg';
+import { handleAddToCartGlobal } from '../../utils/CartHelper';
 
 interface CartSidebarProps {
     activeTab: 'cart' | 'wishlist';
     setActiveTab: (tab: 'cart' | 'wishlist') => void;
 }
+
+export const getStockInfo = (prod: any) => {
+    if (!prod || prod.isActive === false) {
+        return {
+            label: 'Unavailable',
+            isOutOfStock: true,
+            isLowStock: false,
+            isUnavailable: true,
+            isPurchasable: false,
+            color: '#dc3545'
+        };
+    }
+    const stock = prod.stock;
+    if (stock === undefined || stock <= 0) {
+        return {
+            label: 'Out of Stock',
+            isOutOfStock: true,
+            isLowStock: false,
+            isUnavailable: false,
+            isPurchasable: false,
+            color: '#dc3545'
+        };
+    }
+    if (stock <= 10) {
+        return {
+            label: `Low Stock (${stock} left)`,
+            isOutOfStock: false,
+            isLowStock: true,
+            isUnavailable: false,
+            isPurchasable: true,
+            color: '#d97706'
+        };
+    }
+    return {
+        label: 'In Stock',
+        isOutOfStock: false,
+        isLowStock: false,
+        isUnavailable: false,
+        isPurchasable: true,
+        color: '#2e7d32'
+    };
+};
 
 const CartSidebar: React.FC<CartSidebarProps> = ({ activeTab, setActiveTab }) => {
     const isUser = useSelector((state: RootState) => state.auth.user.isAuthenticated) && !!localStorage.getItem('user_accessToken');
@@ -22,16 +65,13 @@ const CartSidebar: React.FC<CartSidebarProps> = ({ activeTab, setActiveTab }) =>
     };
 
     const handleCloseOffcanvas = () => {
-        console.log("[Sidebar] Closing offcanvas...");
         const offcanvas = document.getElementById('offcanvasRight');
         if (offcanvas) {
             try {
-                // Try getting existing instance or create a new one to hide it properly
                 const bsOffcanvas = (window as any).bootstrap?.Offcanvas.getInstance(offcanvas) || 
                                    new (window as any).bootstrap.Offcanvas(offcanvas);
                 bsOffcanvas.hide();
             } catch (e) {
-                console.warn("[Sidebar] Fallback manual close", e);
                 offcanvas.classList.remove('show');
                 document.body.style.overflow = '';
                 document.body.style.paddingRight = '';
@@ -41,7 +81,7 @@ const CartSidebar: React.FC<CartSidebarProps> = ({ activeTab, setActiveTab }) =>
         }
     };
 
-    const fetchCartAndWishlist = async () => {
+    const fetchCartAndWishlist = useCallback(async () => {
         if (isUser) {
             try {
                 const [cartRes, wishRes] = await Promise.all([
@@ -49,10 +89,10 @@ const CartSidebar: React.FC<CartSidebarProps> = ({ activeTab, setActiveTab }) =>
                     userApiClient.get('/user/wishlist')
                 ]);
                 if (cartRes.data.success && cartRes.data.data) {
-                    setCartItems(cartRes.data.data.products);
+                    setCartItems(cartRes.data.data.products || []);
                 }
                 if (wishRes.data.success) {
-                    setWishlistItems(wishRes.data.data);
+                    setWishlistItems(wishRes.data.data || []);
                 }
             } catch (err) {
                 console.error("Failed to fetch sidebar items", err);
@@ -68,7 +108,7 @@ const CartSidebar: React.FC<CartSidebarProps> = ({ activeTab, setActiveTab }) =>
                 try { setWishlistItems(JSON.parse(localWishlistStr)); } catch (e) { setWishlistItems([]); }
             } else setWishlistItems([]);
         }
-    };
+    }, [isUser]);
 
     useEffect(() => {
         fetchCartAndWishlist();
@@ -79,7 +119,12 @@ const CartSidebar: React.FC<CartSidebarProps> = ({ activeTab, setActiveTab }) =>
             }
         };
 
-        const handleCustomUpdate = () => {
+        const handleCustomUpdate = (e: Event) => {
+            const customEvt = e as CustomEvent;
+            // Prevent immediate background refetch if this event originated from sidebar's optimistic local update
+            if (customEvt?.detail?.source === 'sidebar') {
+                return;
+            }
             fetchCartAndWishlist();
         };
 
@@ -87,228 +132,792 @@ const CartSidebar: React.FC<CartSidebarProps> = ({ activeTab, setActiveTab }) =>
         window.addEventListener('cart-updated', handleCustomUpdate);
         window.addEventListener('wishlist-updated', handleCustomUpdate);
 
+        const offcanvasEl = document.getElementById('offcanvasRight');
+        if (offcanvasEl) {
+            offcanvasEl.addEventListener('show.bs.offcanvas', fetchCartAndWishlist);
+        }
+
         return () => {
             window.removeEventListener('storage', handleStorageChange);
             window.removeEventListener('cart-updated', handleCustomUpdate);
             window.removeEventListener('wishlist-updated', handleCustomUpdate);
+            if (offcanvasEl) {
+                offcanvasEl.removeEventListener('show.bs.offcanvas', fetchCartAndWishlist);
+            }
         };
-    }, [isUser]); // Re-register everything when auth state changes
+    }, [fetchCartAndWishlist]);
+
+    useEffect(() => {
+        fetchCartAndWishlist();
+    }, [activeTab, fetchCartAndWishlist]);
 
     const updateQty = async (productId: string, delta: number) => {
         const item = cartItems.find(i => (i.product?._id || i.product) === productId);
         if (!item || !item.product) return;
         const prod = item.product;
-        if (prod.isActive === false) return;
-        if (prod.stock !== undefined && prod.stock <= 0) return;
-        if (delta > 0 && prod.stock !== undefined && item.quantity + delta > prod.stock) return;
+        const stockInfo = getStockInfo(prod);
 
-        const newQty = Math.max(1, item.quantity + delta);
+        // If not purchasable (stock 0 or inactive), do not allow increasing
+        if (!stockInfo.isPurchasable && delta > 0) return;
+
+        const availableStock = prod.stock !== undefined ? prod.stock : 9999;
+        if (delta > 0 && item.quantity >= availableStock) return;
+
+        const targetQty = item.quantity + delta;
+        if (targetQty < 1) return;
+
+        const newQty = prod.stock !== undefined ? Math.min(targetQty, prod.stock) : targetQty;
+        if (newQty === item.quantity && delta > 0) return;
+
+        // Optimistically update
+        const newItems = cartItems.map(i => 
+            (i.product?._id === productId || i.product === productId) ? { ...i, quantity: newQty } : i
+        );
+        setCartItems(newItems);
+        window.dispatchEvent(new CustomEvent('cart-updated', { detail: { count: newItems.length, source: 'sidebar' } }));
 
         if (isUser) {
             try {
                 await userApiClient.put('/user/cart/update', { productId, quantity: newQty });
+            } catch (err) {
+                console.error("Failed to update cart quantity", err);
                 fetchCartAndWishlist();
-            } catch (err) { }
+            }
         } else {
-            const newItems = cartItems.map(i => (i.product?._id === productId || i.product === productId) ? { ...i, quantity: newQty } : i);
-            setCartItems(newItems);
             localStorage.setItem('offlineCart', JSON.stringify(newItems));
-            window.dispatchEvent(new Event('cart-updated'));
         }
     };
 
     const removeCartItem = async (productId: string) => {
+        const newItems = cartItems.filter(i => (i.product?._id || i.product) !== productId);
+        setCartItems(newItems);
+        window.dispatchEvent(new CustomEvent('cart-updated', { detail: { count: newItems.length, source: 'sidebar' } }));
+
         if (isUser) {
             try {
                 await userApiClient.delete(`/user/cart/${productId}`);
+            } catch (err) {
+                console.error("Failed to remove cart item", err);
                 fetchCartAndWishlist();
-            } catch (err) { }
+            }
         } else {
-            const newItems = cartItems.filter(i => i.product._id !== productId);
-            setCartItems(newItems);
             localStorage.setItem('offlineCart', JSON.stringify(newItems));
-            window.dispatchEvent(new Event('cart-updated'));
         }
     };
 
     const removeWishlistItem = async (productId: string) => {
+        const newItems = wishlistItems.filter(i => (i._id || i) !== productId);
+        setWishlistItems(newItems);
+        window.dispatchEvent(new CustomEvent('wishlist-updated', { detail: { count: newItems.length, source: 'sidebar' } }));
+
         if (isUser) {
             try {
                 await userApiClient.post('/user/wishlist/toggle', { productId });
+            } catch (err) {
+                console.error("Failed to remove wishlist item", err);
                 fetchCartAndWishlist();
-            } catch (err) { }
+            }
         } else {
-            const newItems = wishlistItems.filter(i => i._id !== productId);
-            setWishlistItems(newItems);
             localStorage.setItem('offlineWishlist', JSON.stringify(newItems));
-            window.dispatchEvent(new Event('wishlist-updated'));
         }
     };
 
+    const handleAddToCartFromWishlist = async (prod: any) => {
+        const stockInfo = getStockInfo(prod);
+        if (!stockInfo.isPurchasable) return;
+
+        await handleAddToCartGlobal(prod, 1, isUser, navigate, false);
+        fetchCartAndWishlist();
+    };
+
     const validCartItems = cartItems.filter(item => item && item.product);
-    const cartSubtotal = validCartItems.reduce((acc, item) => acc + ((item.product?.price || 0) * (item.quantity || 1)), 0);
-    const hasInvalidItems = validCartItems.some(i => !i.product || i.product.isActive === false || (i.product.stock !== undefined && (i.product.stock <= 0 || i.quantity > i.product.stock)));
+    const cartSubtotal = validCartItems.reduce((acc, item) => {
+        const prod = item.product;
+        const unitPrice = (prod?.offerPrice && prod.offerPrice > 0) ? prod.offerPrice : (prod?.price || 0);
+        return acc + (unitPrice * (item.quantity || 1));
+    }, 0);
+    const hasInvalidItems = validCartItems.some(i => {
+        const prod = i.product;
+        if (!prod || prod.isActive === false) return true;
+        if (prod.stock !== undefined && (prod.stock <= 0 || i.quantity > prod.stock)) return true;
+        return false;
+    });
 
     return (
-        <div className="offcanvas dz-offcanvas offcanvas-end" tabIndex={-1} id="offcanvasRight" style={{ width: '450px' }}>
-            <button type="button" className="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"
-                style={{ position: 'absolute', top: '25px', right: '30px', zIndex: '10', fontSize: '24px', background: 'none', border: 'none', color: '#666', opacity: 0.8 }}>
-                <i className="fa-solid fa-xmark"></i>
+        <div className="offcanvas dz-offcanvas offcanvas-end" tabIndex={-1} id="offcanvasRight" style={{ width: '430px', maxWidth: '100vw' }}>
+            {/* Custom Close Button */}
+            <button
+                type="button"
+                className="btn-close-custom"
+                data-bs-dismiss="offcanvas"
+                aria-label="Close"
+                onClick={handleCloseOffcanvas}
+                style={{
+                    position: 'absolute',
+                    top: '20px',
+                    right: '24px',
+                    zIndex: 10,
+                    width: '32px',
+                    height: '32px',
+                    borderRadius: '50%',
+                    background: '#FFFFFF',
+                    border: '1px solid #E2E8F0',
+                    color: '#64748B',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: 'pointer',
+                    boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
+                    transition: 'all 0.2s ease'
+                }}
+                onMouseEnter={(e) => {
+                    e.currentTarget.style.background = '#F1F5F9';
+                    e.currentTarget.style.color = '#1E293B';
+                }}
+                onMouseLeave={(e) => {
+                    e.currentTarget.style.background = '#FFFFFF';
+                    e.currentTarget.style.color = '#64748B';
+                }}
+            >
+                <i className="fa-solid fa-xmark" style={{ fontSize: '15px' }}></i>
             </button>
-            <div className="offcanvas-body d-flex flex-column" style={{ padding: '30px 40px', height: '100%', background: '#F4FBF7' }}>
+
+            <div className="offcanvas-body d-flex flex-column" style={{ padding: '24px 28px', height: '100%', background: '#F4FBF7' }}>
                 <div className="dz-tabs d-flex flex-column h-100">
-                    <ul className="nav nav-tabs center mb-3" role="tablist" style={{ borderBottom: '1px solid #D9D9D9', justifyContent: 'center' }}>
-                        <li className="nav-item">
-                            <button
-                                className={`nav-link ${activeTab === 'cart' ? 'active' : ''}`}
-                                onClick={() => setActiveTab('cart')}
-                            >
-                                Shopping Cart <span className="badge badge-light" style={{
-                                    marginLeft: '8px',
-                                    fontSize: '14px',
-                                    padding: '4px 8px',
-                                    fontWeight: '500',
-                                    borderRadius: '1px'
-                                }}>{cartItems.length}</span>
-                            </button>
-                        </li>
-                        <li className="nav-item">
-                            <button
-                                className={`nav-link ${activeTab === 'wishlist' ? 'active' : ''}`}
-                                onClick={() => setActiveTab('wishlist')}
-                            >
-                                Wishlist <span className="badge badge-light" style={{
-                                    marginLeft: '8px',
-                                    fontSize: '14px',
-                                    padding: '4px 8px',
-                                    fontWeight: '500',
-                                    borderRadius: '1px'
-                                }}>{wishlistItems.length}</span>
-                            </button>
-                        </li>
-                    </ul>
+                    {/* Modern Tab Switcher */}
+                    <div style={{ display: 'flex', background: '#EEF5F1', borderRadius: '10px', padding: '4px', marginBottom: '20px', width: 'calc(100% - 40px)' }}>
+                        <button
+                            type="button"
+                            onClick={() => setActiveTab('cart')}
+                            style={{
+                                flex: 1,
+                                padding: '9px 12px',
+                                border: 'none',
+                                borderRadius: '8px',
+                                background: activeTab === 'cart' ? '#FFFFFF' : 'transparent',
+                                color: activeTab === 'cart' ? '#0D775E' : '#64748B',
+                                fontWeight: activeTab === 'cart' ? 600 : 500,
+                                fontSize: '14px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                gap: '8px',
+                                cursor: 'pointer',
+                                boxShadow: activeTab === 'cart' ? '0 2px 6px rgba(13, 119, 94, 0.12)' : 'none',
+                                transition: 'all 0.2s ease'
+                            }}
+                        >
+                            <span>Shopping Cart</span>
+                            <span style={{
+                                fontSize: '11px',
+                                fontWeight: 700,
+                                padding: '2px 7px',
+                                borderRadius: '12px',
+                                background: activeTab === 'cart' ? '#0D775E' : '#E2E8F0',
+                                color: activeTab === 'cart' ? '#FFFFFF' : '#475569'
+                            }}>
+                                {validCartItems.length}
+                            </span>
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setActiveTab('wishlist')}
+                            style={{
+                                flex: 1,
+                                padding: '9px 12px',
+                                border: 'none',
+                                borderRadius: '8px',
+                                background: activeTab === 'wishlist' ? '#FFFFFF' : 'transparent',
+                                color: activeTab === 'wishlist' ? '#0D775E' : '#64748B',
+                                fontWeight: activeTab === 'wishlist' ? 600 : 500,
+                                fontSize: '14px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                gap: '8px',
+                                cursor: 'pointer',
+                                boxShadow: activeTab === 'wishlist' ? '0 2px 6px rgba(13, 119, 94, 0.12)' : 'none',
+                                transition: 'all 0.2s ease'
+                            }}
+                        >
+                            <span>Wishlist</span>
+                            <span style={{
+                                fontSize: '11px',
+                                fontWeight: 700,
+                                padding: '2px 7px',
+                                borderRadius: '12px',
+                                background: activeTab === 'wishlist' ? '#0D775E' : '#E2E8F0',
+                                color: activeTab === 'wishlist' ? '#FFFFFF' : '#475569'
+                            }}>
+                                {wishlistItems.length}
+                            </span>
+                        </button>
+                    </div>
 
                     <div className="tab-content flex-grow-1 d-flex flex-column" style={{ minHeight: 0, overflow: 'hidden' }}>
-                        <div className="flex-grow-1" style={{ overflowY: 'auto', paddingRight: '5px' }}>
+                        <div className="flex-grow-1" style={{ overflowY: 'auto', paddingRight: '4px' }}>
                             <ul className="sidebar-cart-list" style={{ listStyle: 'none', padding: 0, margin: 0 }}>
-                                {activeTab === 'cart' ? validCartItems.map((item, idx) => {
-                                    const prod = item.product;
-                                    const isItemDisabled = prod.isActive === false || (prod.stock !== undefined && prod.stock <= 0);
-                                    const isAtMaxStock = prod.stock !== undefined && item.quantity >= prod.stock;
-
-                                    return (
-                                        <li key={prod?._id || `cart-item-${idx}`} style={{ padding: '20px 0', borderBottom: '1px solid #E5E5E5', display: 'flex', alignItems: 'center', position: 'relative' }}>
-                                            <div className="dz-media me-4" style={{ background: '#EBF1ED', width: '90px', height: '105px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                                <img src={prod.images?.[0] || product1} alt={prod.productName} style={{ maxWidth: '80%', maxHeight: '80%' }} />
+                                {activeTab === 'cart' ? (
+                                    validCartItems.length === 0 ? (
+                                        <div style={{ textAlign: 'center', padding: '60px 20px', color: '#64748B' }}>
+                                            <div style={{
+                                                width: '64px',
+                                                height: '64px',
+                                                borderRadius: '50%',
+                                                background: '#EEF5F1',
+                                                display: 'inline-flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                marginBottom: '16px'
+                                            }}>
+                                                <i className="fa-solid fa-cart-shopping" style={{ fontSize: '24px', color: '#0D775E' }}></i>
                                             </div>
-                                            <div className="cart-content flex-grow-1">
-                                                <h6 className="title" style={{ fontFamily: "'Marcellus', serif", fontSize: '18px', fontWeight: '400', color: '#2D2E2F', marginBottom: '6px' }}>
-                                                    <Link to={`/product/${prod._id}`}>{prod.productName}</Link>
-                                                </h6>
+                                            <h5 style={{ fontFamily: "'Marcellus', serif", fontSize: '19px', color: '#2D2E2F', marginBottom: '8px' }}>
+                                                Your Cart is Empty
+                                            </h5>
+                                            <p style={{ fontSize: '13px', color: '#64748B', maxWidth: '240px', margin: '0 auto 20px', lineHeight: '1.4' }}>
+                                                Explore our authentic organic products and add your favorites to cart.
+                                            </p>
+                                            <button
+                                                type="button"
+                                                onClick={() => handleNavigate('/shop')}
+                                                className="btn btn-secondary"
+                                                style={{
+                                                    background: '#0D775E',
+                                                    borderColor: '#0D775E',
+                                                    fontSize: '13.5px',
+                                                    padding: '9px 24px',
+                                                    borderRadius: '6px',
+                                                    fontWeight: 500
+                                                }}
+                                            >
+                                                Start Shopping
+                                            </button>
+                                        </div>
+                                    ) : (
+                                        validCartItems.map((item, idx) => {
+                                            const prod = item.product;
+                                            const stockInfo = getStockInfo(prod);
+                                            const isItemDisabled = !stockInfo.isPurchasable;
+                                            const isAtMaxStock = prod.stock !== undefined && item.quantity >= prod.stock;
+                                            const isAtMinStock = item.quantity <= 1;
+                                            const isExceedingStock = prod.stock !== undefined && prod.stock > 0 && item.quantity > prod.stock;
 
-                                                {/* Stock Status Badge */}
-                                                <div className="mb-2">
-                                                    {prod.isActive === false ? (
-                                                        <span className="badge bg-danger text-white" style={{ fontSize: '10px' }}>Unavailable</span>
-                                                    ) : prod.stock !== undefined && prod.stock <= 0 ? (
-                                                        <span className="badge bg-danger text-white" style={{ fontSize: '10px' }}>Out of Stock</span>
-                                                    ) : prod.stock !== undefined && item.quantity > prod.stock ? (
-                                                        <span className="badge bg-warning text-dark" style={{ fontSize: '10px' }}>Only {prod.stock} left</span>
-                                                    ) : prod.stock !== undefined && prod.stock <= 10 ? (
-                                                        <span className="badge bg-warning text-dark" style={{ fontSize: '10px' }}>Low Stock ({prod.stock})</span>
-                                                    ) : null}
-                                                </div>
+                                            const unitPrice = (prod.offerPrice && prod.offerPrice > 0) ? prod.offerPrice : (prod.price || 0);
+                                            const hasOffer = prod.offerPrice && prod.offerPrice > 0 && prod.offerPrice < prod.price;
 
-                                                <div className="d-flex align-items-center">
-                                                    <div className="d-flex align-items-center" style={{ border: '1px solid #D9D9D9' }}>
-                                                        <button onClick={() => updateQty(prod._id, -1)} type="button" style={{ width: '30px', height: '30px', background: '#fff', border: 'none', fontSize: '18px', color: '#333' }}>-</button>
-                                                        <input type="text" readOnly value={item.quantity} style={{ width: '35px', height: '30px', borderLeft: '1px solid #D9D9D9', borderRight: '1px solid #D9D9D9', borderTop: 'none', borderBottom: 'none', textAlign: 'center', fontSize: '14px', background: '#F8FBF9', color: '#2D2E2F' }} />
-                                                        <button
-                                                            disabled={isItemDisabled || isAtMaxStock}
-                                                            onClick={() => updateQty(prod._id, 1)}
-                                                            type="button"
-                                                            style={{
-                                                                width: '30px',
-                                                                height: '30px',
-                                                                background: '#fff',
-                                                                border: 'none',
-                                                                fontSize: '18px',
-                                                                color: (isItemDisabled || isAtMaxStock) ? '#ccc' : '#333',
-                                                                cursor: (isItemDisabled || isAtMaxStock) ? 'not-allowed' : 'pointer'
-                                                            }}
-                                                        >+</button>
+                                            return (
+                                                <li
+                                                    key={prod?._id || `cart-item-${idx}`}
+                                                    style={{
+                                                        padding: '14px',
+                                                        borderRadius: '10px',
+                                                        background: '#FFFFFF',
+                                                        border: isExceedingStock || isItemDisabled ? '1px solid #FCA5A5' : '1px solid #E6ECE8',
+                                                        marginBottom: '12px',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        position: 'relative',
+                                                        boxShadow: '0 1px 3px rgba(0,0,0,0.02)',
+                                                        transition: 'border-color 0.2s ease'
+                                                    }}
+                                                >
+                                                    {/* Product Image */}
+                                                    <div
+                                                        style={{
+                                                            width: '74px',
+                                                            height: '80px',
+                                                            borderRadius: '8px',
+                                                            background: '#F4F7F5',
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            justifyContent: 'center',
+                                                            flexShrink: 0,
+                                                            marginRight: '14px',
+                                                            overflow: 'hidden',
+                                                            cursor: 'pointer'
+                                                        }}
+                                                        onClick={() => handleNavigate(`/product/${prod._id}`)}
+                                                    >
+                                                        <img
+                                                            src={prod.images?.[0] || product1}
+                                                            alt={prod.productName}
+                                                            style={{ maxWidth: '85%', maxHeight: '85%', objectFit: 'contain' }}
+                                                        />
                                                     </div>
-                                                    <h6 className="dz-price" style={{ fontSize: '18px', fontWeight: '500', color: '#2D2E2F', marginLeft: '15px', marginBottom: 0 }}>
-                                                        ₹{prod.price?.toFixed(2)}
-                                                    </h6>
-                                                </div>
+
+                                                    {/* Product Details */}
+                                                    <div className="cart-content flex-grow-1" style={{ minWidth: 0, paddingRight: '22px' }}>
+                                                        <h6
+                                                            className="title"
+                                                            style={{
+                                                                fontFamily: "'Marcellus', serif",
+                                                                fontSize: '15px',
+                                                                fontWeight: '500',
+                                                                color: '#2D2E2F',
+                                                                marginBottom: '3px',
+                                                                lineHeight: '1.3',
+                                                                display: '-webkit-box',
+                                                                WebkitLineClamp: 2,
+                                                                WebkitBoxOrient: 'vertical',
+                                                                overflow: 'hidden'
+                                                            }}
+                                                        >
+                                                            <Link
+                                                                to={`/product/${prod._id}`}
+                                                                onClick={handleCloseOffcanvas}
+                                                                style={{ color: '#2D2E2F', textDecoration: 'none' }}
+                                                            >
+                                                                {prod.productName}
+                                                            </Link>
+                                                        </h6>
+
+                                                        {/* Subtle Stock Indicator */}
+                                                        <div
+                                                            style={{
+                                                                display: 'inline-flex',
+                                                                alignItems: 'center',
+                                                                gap: '5px',
+                                                                fontSize: '11.5px',
+                                                                fontWeight: 500,
+                                                                color: stockInfo.color,
+                                                                marginBottom: '8px'
+                                                            }}
+                                                        >
+                                                            <span
+                                                                style={{
+                                                                    width: '6px',
+                                                                    height: '6px',
+                                                                    borderRadius: '50%',
+                                                                    backgroundColor: stockInfo.color,
+                                                                    display: 'inline-block',
+                                                                    flexShrink: 0
+                                                                }}
+                                                            />
+                                                            <span>{stockInfo.label}</span>
+                                                            {isExceedingStock && (
+                                                                <span style={{ color: '#DC2626', fontSize: '11px', fontWeight: 600, marginLeft: '4px' }}>
+                                                                    (In cart: {item.quantity})
+                                                                </span>
+                                                            )}
+                                                        </div>
+
+                                                        {/* Controls: Quantity + Price */}
+                                                        <div className="d-flex align-items-center justify-content-between" style={{ marginTop: '2px' }}>
+                                                            <div
+                                                                style={{
+                                                                    display: 'inline-flex',
+                                                                    alignItems: 'center',
+                                                                    border: '1px solid #D1D5DB',
+                                                                    borderRadius: '5px',
+                                                                    overflow: 'hidden',
+                                                                    background: '#FFFFFF',
+                                                                    height: '26px'
+                                                                }}
+                                                            >
+                                                                <button
+                                                                    disabled={isItemDisabled || isAtMinStock}
+                                                                    onClick={() => updateQty(prod._id, -1)}
+                                                                    type="button"
+                                                                    aria-label="Decrease quantity"
+                                                                    style={{
+                                                                        width: '26px',
+                                                                        height: '26px',
+                                                                        background: (isItemDisabled || isAtMinStock) ? '#F9FAFB' : '#FFFFFF',
+                                                                        border: 'none',
+                                                                        color: (isItemDisabled || isAtMinStock) ? '#CBD5E1' : '#374151',
+                                                                        cursor: (isItemDisabled || isAtMinStock) ? 'not-allowed' : 'pointer',
+                                                                        display: 'flex',
+                                                                        alignItems: 'center',
+                                                                        justifyContent: 'center'
+                                                                    }}
+                                                                >
+                                                                    <i className="fa-solid fa-minus" style={{ fontSize: '9px' }}></i>
+                                                                </button>
+                                                                <span
+                                                                    style={{
+                                                                        width: '28px',
+                                                                        height: '26px',
+                                                                        borderLeft: '1px solid #E5E7EB',
+                                                                        borderRight: '1px solid #E5E7EB',
+                                                                        display: 'flex',
+                                                                        alignItems: 'center',
+                                                                        justifyContent: 'center',
+                                                                        fontSize: '12px',
+                                                                        fontWeight: 600,
+                                                                        color: '#1F2937',
+                                                                        background: '#FFFFFF'
+                                                                    }}
+                                                                >
+                                                                    {item.quantity}
+                                                                </span>
+                                                                <button
+                                                                    disabled={isItemDisabled || isAtMaxStock}
+                                                                    onClick={() => updateQty(prod._id, 1)}
+                                                                    type="button"
+                                                                    aria-label="Increase quantity"
+                                                                    style={{
+                                                                        width: '26px',
+                                                                        height: '26px',
+                                                                        background: (isItemDisabled || isAtMaxStock) ? '#F9FAFB' : '#FFFFFF',
+                                                                        border: 'none',
+                                                                        color: (isItemDisabled || isAtMaxStock) ? '#CBD5E1' : '#374151',
+                                                                        cursor: (isItemDisabled || isAtMaxStock) ? 'not-allowed' : 'pointer',
+                                                                        display: 'flex',
+                                                                        alignItems: 'center',
+                                                                        justifyContent: 'center'
+                                                                    }}
+                                                                >
+                                                                    <i className="fa-solid fa-plus" style={{ fontSize: '9px' }}></i>
+                                                                </button>
+                                                            </div>
+
+                                                            <div className="text-end" style={{ marginLeft: '10px' }}>
+                                                                <span style={{ fontSize: '15px', fontWeight: '600', color: '#0D775E' }}>
+                                                                    ₹{(unitPrice * item.quantity).toFixed(2)}
+                                                                </span>
+                                                                {hasOffer && (
+                                                                    <del style={{ fontSize: '11px', color: '#9CA3AF', marginLeft: '6px' }}>
+                                                                        ₹{((prod.price || 0) * item.quantity).toFixed(2)}
+                                                                    </del>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Remove Button */}
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => removeCartItem(prod._id)}
+                                                        aria-label="Remove item"
+                                                        style={{
+                                                            position: 'absolute',
+                                                            right: '10px',
+                                                            top: '10px',
+                                                            width: '22px',
+                                                            height: '22px',
+                                                            borderRadius: '50%',
+                                                            background: 'transparent',
+                                                            border: 'none',
+                                                            color: '#9CA3AF',
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            justifyContent: 'center',
+                                                            cursor: 'pointer',
+                                                            transition: 'all 0.15s ease'
+                                                        }}
+                                                        onMouseEnter={(e) => {
+                                                            e.currentTarget.style.background = '#FEE2E2';
+                                                            e.currentTarget.style.color = '#EF4444';
+                                                        }}
+                                                        onMouseLeave={(e) => {
+                                                            e.currentTarget.style.background = 'transparent';
+                                                            e.currentTarget.style.color = '#9CA3AF';
+                                                        }}
+                                                    >
+                                                        <i className="fa-solid fa-xmark" style={{ fontSize: '13px' }}></i>
+                                                    </button>
+                                                </li>
+                                            );
+                                        })
+                                    )
+                                ) : (
+                                    wishlistItems.filter(p => p).length === 0 ? (
+                                        <div style={{ textAlign: 'center', padding: '60px 20px', color: '#64748B' }}>
+                                            <div style={{
+                                                width: '64px',
+                                                height: '64px',
+                                                borderRadius: '50%',
+                                                background: '#EEF5F1',
+                                                display: 'inline-flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                marginBottom: '16px'
+                                            }}>
+                                                <i className="fa-regular fa-heart" style={{ fontSize: '24px', color: '#0D775E' }}></i>
                                             </div>
-                                            <a href="javascript:void(0);" onClick={() => removeCartItem(prod._id)} className="dz-close" style={{ position: 'absolute', right: '0', top: '50%', transform: 'translateY(-50%)', color: '#333', fontSize: '18px' }}>
-                                                <i className="fa-solid fa-xmark"></i>
-                                            </a>
-                                        </li>
-                                    );
-                                }) : wishlistItems.filter(p => p).map((prod, idx) => (
-                                    <li key={prod._id || `wish-${idx}`} style={{ padding: '25px 0', borderBottom: '1px solid #E5E5E5', display: 'flex', alignItems: 'center', position: 'relative' }}>
-                                        <div className="dz-media me-4" style={{ background: '#EBF1ED', width: '90px', height: '105px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                            <img src={prod.images?.[0] || product1} alt={prod.productName} style={{ maxWidth: '80%', maxHeight: '80%' }} />
+                                            <h5 style={{ fontFamily: "'Marcellus', serif", fontSize: '19px', color: '#2D2E2F', marginBottom: '8px' }}>
+                                                Your Wishlist is Empty
+                                            </h5>
+                                            <p style={{ fontSize: '13px', color: '#64748B', maxWidth: '240px', margin: '0 auto 20px', lineHeight: '1.4' }}>
+                                                Save items you love here to easily find and purchase them later.
+                                            </p>
+                                            <button
+                                                type="button"
+                                                onClick={() => handleNavigate('/shop')}
+                                                className="btn btn-secondary"
+                                                style={{
+                                                    background: '#0D775E',
+                                                    borderColor: '#0D775E',
+                                                    fontSize: '13.5px',
+                                                    padding: '9px 24px',
+                                                    borderRadius: '6px',
+                                                    fontWeight: 500
+                                                }}
+                                            >
+                                                Explore Products
+                                            </button>
                                         </div>
-                                        <div className="cart-content flex-grow-1">
-                                            <h6 className="title" style={{ fontFamily: "'Marcellus', serif", fontSize: '18px', fontWeight: '400', color: '#2D2E2F', marginBottom: '10px' }}>
-                                                <Link to={`/product/${prod._id}`}>{prod.productName}</Link>
-                                            </h6>
-                                            <div className="d-flex align-items-center">
-                                                <h6 className="dz-price" style={{ fontSize: '18px', fontWeight: '500', color: '#2D2E2F', marginBottom: 0 }}>
-                                                    ₹{prod.price?.toFixed(2)}
-                                                </h6>
-                                            </div>
-                                        </div>
-                                        <a href="javascript:void(0);" onClick={() => removeWishlistItem(prod._id)} className="dz-close" style={{ position: 'absolute', right: '0', top: '50%', transform: 'translateY(-50%)', color: '#333', fontSize: '18px' }}>
-                                            <i className="fa-solid fa-xmark"></i>
-                                        </a>
-                                    </li>
-                                ))}
+                                    ) : (
+                                        wishlistItems.filter(p => p).map((prod, idx) => {
+                                            const stockInfo = getStockInfo(prod);
+                                            const isPurchasable = stockInfo.isPurchasable;
+                                            const unitPrice = (prod.offerPrice && prod.offerPrice > 0) ? prod.offerPrice : (prod.price || 0);
+                                            const hasOffer = prod.offerPrice && prod.offerPrice > 0 && prod.offerPrice < prod.price;
+
+                                            return (
+                                                <li
+                                                    key={prod._id || `wish-${idx}`}
+                                                    style={{
+                                                        padding: '14px',
+                                                        borderRadius: '10px',
+                                                        background: '#FFFFFF',
+                                                        border: '1px solid #E6ECE8',
+                                                        marginBottom: '12px',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        position: 'relative',
+                                                        boxShadow: '0 1px 3px rgba(0,0,0,0.02)',
+                                                        transition: 'border-color 0.2s ease'
+                                                    }}
+                                                >
+                                                    {/* Product Image */}
+                                                    <div
+                                                        style={{
+                                                            width: '74px',
+                                                            height: '80px',
+                                                            borderRadius: '8px',
+                                                            background: '#F4F7F5',
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            justifyContent: 'center',
+                                                            flexShrink: 0,
+                                                            marginRight: '14px',
+                                                            overflow: 'hidden',
+                                                            cursor: 'pointer'
+                                                        }}
+                                                        onClick={() => handleNavigate(`/product/${prod._id}`)}
+                                                    >
+                                                        <img
+                                                            src={prod.images?.[0] || product1}
+                                                            alt={prod.productName}
+                                                            style={{ maxWidth: '85%', maxHeight: '85%', objectFit: 'contain' }}
+                                                        />
+                                                    </div>
+
+                                                    {/* Product Details */}
+                                                    <div className="cart-content flex-grow-1" style={{ minWidth: 0, paddingRight: '22px' }}>
+                                                        <h6
+                                                            className="title"
+                                                            style={{
+                                                                fontFamily: "'Marcellus', serif",
+                                                                fontSize: '15px',
+                                                                fontWeight: '500',
+                                                                color: '#2D2E2F',
+                                                                marginBottom: '3px',
+                                                                lineHeight: '1.3',
+                                                                display: '-webkit-box',
+                                                                WebkitLineClamp: 2,
+                                                                WebkitBoxOrient: 'vertical',
+                                                                overflow: 'hidden'
+                                                            }}
+                                                        >
+                                                            <Link
+                                                                to={`/product/${prod._id}`}
+                                                                onClick={handleCloseOffcanvas}
+                                                                style={{ color: '#2D2E2F', textDecoration: 'none' }}
+                                                            >
+                                                                {prod.productName}
+                                                            </Link>
+                                                        </h6>
+
+                                                        {/* Subtle Stock Indicator */}
+                                                        <div
+                                                            style={{
+                                                                display: 'inline-flex',
+                                                                alignItems: 'center',
+                                                                gap: '5px',
+                                                                fontSize: '11.5px',
+                                                                fontWeight: 500,
+                                                                color: stockInfo.color,
+                                                                marginBottom: '8px'
+                                                            }}
+                                                        >
+                                                            <span
+                                                                style={{
+                                                                    width: '6px',
+                                                                    height: '6px',
+                                                                    borderRadius: '50%',
+                                                                    backgroundColor: stockInfo.color,
+                                                                    display: 'inline-block',
+                                                                    flexShrink: 0
+                                                                }}
+                                                            />
+                                                            <span>{stockInfo.label}</span>
+                                                        </div>
+
+                                                        {/* Price and Add to Cart Action */}
+                                                        <div className="d-flex align-items-center justify-content-between" style={{ marginTop: '2px' }}>
+                                                            <div>
+                                                                <span style={{ fontSize: '15px', fontWeight: '600', color: '#0D775E' }}>
+                                                                    ₹{unitPrice.toFixed(2)}
+                                                                </span>
+                                                                {hasOffer && (
+                                                                    <del style={{ fontSize: '11px', color: '#9CA3AF', marginLeft: '6px' }}>
+                                                                        ₹{(prod.price || 0).toFixed(2)}
+                                                                    </del>
+                                                                )}
+                                                            </div>
+
+                                                            <button
+                                                                disabled={!isPurchasable}
+                                                                onClick={() => handleAddToCartFromWishlist(prod)}
+                                                                type="button"
+                                                                style={{
+                                                                    fontSize: '11.5px',
+                                                                    padding: '5px 12px',
+                                                                    borderRadius: '5px',
+                                                                    background: !isPurchasable ? '#F3F4F6' : '#0D775E',
+                                                                    color: !isPurchasable ? '#9CA3AF' : '#FFFFFF',
+                                                                    border: !isPurchasable ? '1px solid #E5E7EB' : 'none',
+                                                                    fontWeight: 500,
+                                                                    cursor: !isPurchasable ? 'not-allowed' : 'pointer',
+                                                                    display: 'inline-flex',
+                                                                    alignItems: 'center',
+                                                                    gap: '5px',
+                                                                    transition: 'all 0.15s ease'
+                                                                }}
+                                                                onMouseEnter={(e) => {
+                                                                    if (isPurchasable) e.currentTarget.style.background = '#095c48';
+                                                                }}
+                                                                onMouseLeave={(e) => {
+                                                                    if (isPurchasable) e.currentTarget.style.background = '#0D775E';
+                                                                }}
+                                                            >
+                                                                <i className="fa-solid fa-cart-shopping" style={{ fontSize: '10px' }}></i>
+                                                                <span>{!isPurchasable ? (stockInfo.isUnavailable ? 'Unavailable' : 'Out of Stock') : 'Add to Cart'}</span>
+                                                            </button>
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Remove Button */}
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => removeWishlistItem(prod._id)}
+                                                        aria-label="Remove item"
+                                                        style={{
+                                                            position: 'absolute',
+                                                            right: '10px',
+                                                            top: '10px',
+                                                            width: '22px',
+                                                            height: '22px',
+                                                            borderRadius: '50%',
+                                                            background: 'transparent',
+                                                            border: 'none',
+                                                            color: '#9CA3AF',
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            justifyContent: 'center',
+                                                            cursor: 'pointer',
+                                                            transition: 'all 0.15s ease'
+                                                        }}
+                                                        onMouseEnter={(e) => {
+                                                            e.currentTarget.style.background = '#FEE2E2';
+                                                            e.currentTarget.style.color = '#EF4444';
+                                                        }}
+                                                        onMouseLeave={(e) => {
+                                                            e.currentTarget.style.background = 'transparent';
+                                                            e.currentTarget.style.color = '#9CA3AF';
+                                                        }}
+                                                    >
+                                                        <i className="fa-solid fa-xmark" style={{ fontSize: '13px' }}></i>
+                                                    </button>
+                                                </li>
+                                            );
+                                        })
+                                    )
+                                )}
                             </ul>
                         </div>
 
-                        <div className="cart-footer mt-auto pt-4" style={{ borderTop: '1px solid #E5E5E5', background: '#F4FBF7' }}>
+                        {/* Footer Section */}
+                        <div className="cart-footer mt-auto pt-3" style={{ borderTop: '1px solid #E5E7EB', background: '#F4FBF7' }}>
                             {activeTab === 'cart' ? (
-                                <>
-                                    <div className="d-flex justify-content-between align-items-center mb-4" style={{ padding: '8px 0' }}>
-                                        <h5 className="mb-0" style={{ fontFamily: "'Marcellus', serif", fontSize: '20px', fontWeight: '500', color: '#2D2E2F' }}>Subtotal:</h5>
-                                        <h5 className="mb-0" style={{ fontWeight: '600', fontSize: '20px', color: '#2D2E2F' }}>₹{cartSubtotal.toFixed(2)}</h5>
-                                    </div>
-                                    <div className="shipping-time mb-4">
-                                        <div className="dz-icon">
-                                            <svg width="45" height="45" viewBox="0 0 45 45" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                                <path fillRule="evenodd" clipRule="evenodd" d="M35.1582 7.73438C36.3226 7.73438 37.2676 8.67937 37.2676 9.84375C37.2676 10.2319 37.5826 10.5469 37.9707 10.5469C38.3588 10.5469 38.6738 10.2319 38.6738 9.84375C38.6738 7.90313 37.0988 6.32812 35.1582 6.32812C34.7701 6.32812 34.4551 6.64312 34.4551 7.03125C34.4551 7.41937 34.7701 7.73438 35.1582 7.73438Z" fill="black" />
-                                                <path fillRule="evenodd" clipRule="evenodd" d="M27.3004 35.8594H26.721C25.5559 35.8594 24.6116 36.8037 24.6116 37.9688V40.7813C24.6116 41.9464 25.5559 42.8907 26.721 42.8907H29.5335C30.0735 42.8907 30.5664 42.6875 30.9398 42.3535C31.3131 42.6875 31.806 42.8907 32.346 42.8907H40.7835C41.9486 42.8907 42.8929 41.9464 42.8929 40.7813V32.3438C42.8929 31.1787 41.9486 30.2344 40.7835 30.2344H32.346C31.1809 30.2344 30.2366 31.1787 30.2366 32.3438V35.9797C30.0166 35.9016 29.7803 35.8594 29.5335 35.8594H28.8972L24.3002 27.3214L33.0491 18.5724V28.1251C33.0491 28.5132 33.3641 28.8282 33.7523 28.8282C34.1404 28.8282 34.4554 28.5132 34.4554 28.1251V27.5928L37.353 24.6945C38.1763 23.8719 38.1763 22.5345 37.353 21.7119C36.5577 20.9159 35.283 20.8892 34.4554 21.631V17.1662L40.0762 11.5454C40.96 10.6615 41.5619 9.53654 41.8073 8.3117C42.0041 7.32522 42.2559 6.06803 42.4654 5.01897C42.6039 4.32709 42.3873 3.61201 41.8888 3.1135C41.3903 2.61498 40.6752 2.39842 39.9834 2.53694C38.9343 2.74647 37.6771 2.99818 36.6906 3.19506C35.4658 3.44045 34.3408 4.04232 33.4569 4.92615L27.8362 10.5469H23.0198C23.7616 9.71936 23.7348 8.44459 22.9389 7.64935C22.1162 6.82599 20.7789 6.82599 19.9562 7.64935L17.058 10.5469H14.9338C15.6756 9.71936 15.6489 8.44459 14.853 7.64935C14.0303 6.82599 12.693 6.82599 11.8703 7.64935L8.97202 10.5469H4.22101C3.25492 10.5469 2.41187 11.2037 2.17562 12.1409C1.93937 13.0775 2.37039 14.0555 3.22117 14.5133L16.6424 21.7407L10.9612 27.4219H4.22101C3.2732 27.4219 2.44141 28.0547 2.18828 28.9681C1.93516 29.8822 2.32257 30.8525 3.13538 31.3397L6.11452 33.1271C5.30241 34.4665 4.64007 35.896 4.14155 37.3908L3.89827 38.1214L3.3618 38.6579C2.84782 39.1719 2.50539 39.8328 2.38235 40.5493C2.26492 41.2341 2.12148 42.0687 2.12148 42.0687C2.08281 42.2937 2.15593 42.5237 2.31765 42.6847C2.47867 42.8464 2.70859 42.9195 2.93359 42.8808L4.45303 42.62C5.16952 42.4969 5.83046 42.1545 6.34444 41.6405L6.88093 41.1047L7.61218 40.8608C9.10702 40.3622 10.5365 39.6999 11.8752 38.8885L13.6626 41.8669C14.1498 42.6797 15.1201 43.0672 16.0342 42.814C16.9476 42.5609 17.5804 41.7291 17.5804 40.7813V34.0412L23.2616 28.3599L27.3004 35.8594ZM38.6741 31.6407V32.9063C38.6741 33.3169 38.511 33.71 38.2213 34.0004C37.9309 34.2901 37.5372 34.4532 37.1273 34.4532H36.0023C35.5924 34.4532 35.1986 34.2901 34.9082 34.0004C34.6185 33.71 34.4554 33.3169 34.4554 32.9063V31.6407H32.346C31.9579 31.6407 31.6429 31.9557 31.6429 32.3438V40.7813C31.6429 41.1694 31.9579 41.4844 32.346 41.4844H40.7835C41.1716 41.4844 41.4866 41.1694 41.4866 40.7813V32.3438C41.4866 31.9557 41.1716 31.6407 40.7835 31.6407H38.6741ZM26.721 37.2657H29.5335C29.9216 37.2657 30.2366 37.5807 30.2366 37.9688V40.7813C30.2366 41.1694 29.9216 41.4844 29.5335 41.4844H26.721C26.3329 41.4844 26.0179 41.1694 26.0179 40.7813V37.9688C26.0179 37.5807 26.3329 37.2657 26.721 37.2657ZM16.1741 35.4474L15.8556 35.7659C14.9894 36.6322 14.0514 37.419 13.0537 38.1193L14.8684 41.1434C15.0309 41.4141 15.3543 41.5435 15.6587 41.4591C15.9632 41.3747 16.1741 41.097 16.1741 40.7813V35.4474ZM4.21539 41.2341L3.67609 41.3262L3.76819 40.7869C3.84202 40.3566 4.04733 39.9608 4.356 39.6521L9.3489 34.6592C9.62312 34.385 10.0689 34.385 10.3431 34.6592C10.6173 34.9334 10.6173 35.3792 10.3431 35.6534L5.35022 40.6463C5.04155 40.955 4.6457 41.1603 4.21539 41.2341ZM9.32077 38.6649C11.3732 37.6995 13.2491 36.3833 14.8614 34.771L39.0819 10.5512C39.7689 9.86349 40.2372 8.98881 40.4277 8.03608L41.0866 4.74334C41.133 4.51272 41.0605 4.27436 40.8946 4.10772C40.728 3.94178 40.4896 3.86936 40.259 3.91576L36.9663 4.57459C36.0135 4.76514 35.1388 5.23342 34.4512 5.92037L22.5873 17.7842C22.3131 18.0584 21.8673 18.0584 21.5931 17.7842C21.3189 17.51 21.3189 17.0642 21.5931 16.79L26.4299 11.9532H4.22101C3.89898 11.9532 3.61773 12.1719 3.53898 12.4847C3.46023 12.7969 3.60437 13.1225 3.88773 13.2751L17.6809 20.7022L19.6047 18.7784C19.8789 18.5042 20.3247 18.5042 20.5989 18.7784C20.8731 19.0526 20.8731 19.4984 20.5989 19.7726L10.2313 30.1402C8.61906 31.7525 7.3035 33.6284 6.33811 35.6815L8.35468 33.665C9.17734 32.8416 10.5147 32.8416 11.3373 33.665C12.1607 34.4876 12.1607 35.825 11.3373 36.6476L9.32077 38.6649ZM37.2679 31.6407V32.9063C37.2679 32.9436 37.2531 32.9794 37.2264 33.0062C37.2004 33.0322 37.1645 33.0469 37.1273 33.0469H36.0023C35.965 33.0469 35.9291 33.0322 35.9031 33.0062C35.8764 32.9794 35.8616 32.9436 35.8616 32.9063V31.6407H37.2679ZM9.55492 28.8282H4.22101C3.90531 28.8282 3.62758 29.0391 3.54321 29.3436C3.45883 29.648 3.58819 29.9715 3.85889 30.1339L6.88374 31.9487C7.58264 30.9516 8.37015 30.013 9.23711 29.146L9.55492 28.8282ZM34.4554 25.6037V23.6152L35.3645 22.7061C35.6387 22.4319 36.0845 22.4319 36.3587 22.7061C36.633 22.9803 36.633 23.4261 36.3587 23.7003L34.4554 25.6037ZM12.9496 10.5469H10.9612L12.8645 8.64357C13.1387 8.36936 13.5845 8.36936 13.8587 8.64357C14.133 8.91779 14.133 9.36358 13.8587 9.63779L12.9496 10.5469ZM21.0355 10.5469H19.0471L20.9505 8.64357C21.2247 8.36936 21.6705 8.36936 21.9447 8.64357C22.2189 8.91779 22.2189 9.36358 21.9447 9.63779L21.0355 10.5469Z" fill="black" />
-                                            </svg>
+                                validCartItems.length > 0 ? (
+                                    <>
+                                        <div className="d-flex justify-content-between align-items-center mb-3">
+                                            <span style={{ fontFamily: "'Marcellus', serif", fontSize: '18px', fontWeight: '500', color: '#2D2E2F' }}>
+                                                Subtotal:
+                                            </span>
+                                            <span style={{ fontWeight: '700', fontSize: '19px', color: '#0D775E' }}>
+                                                ₹{cartSubtotal.toFixed(2)}
+                                            </span>
                                         </div>
-                                        <div className="shipping-content pe-4">
-                                            <h6 className="title pe-2">Congratulations , you've got free shipping!</h6>
-                                            <div className="progress">
-                                                <div className="progress-bar" style={{ width: '75%' }} role="progressbar"></div>
+
+                                        {hasInvalidItems && (
+                                            <div style={{ fontSize: '12px', color: '#DC2626', marginBottom: '10px', textAlign: 'center', fontWeight: 500 }}>
+                                                <i className="fa-solid fa-triangle-exclamation me-1"></i> Some items have stock issues. Review cart before checkout.
                                             </div>
-                                        </div>
-                                    </div>
-                                    <button
-                                        onClick={() => {
-                                            if (hasInvalidItems) {
-                                                handleNavigate('/shop-cart');
-                                            } else {
-                                                handleNavigate('/checkout');
-                                            }
-                                        }}
-                                        className="btn btn-outline-secondary btn-block w-100 mb-2"
-                                    >
-                                        Checkout
-                                    </button>
-                                    <button onClick={() => handleNavigate('/shop-cart')} className="btn btn-secondary btn-block w-100">View Cart</button>
-                                </>
+                                        )}
+
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                if (hasInvalidItems) {
+                                                    handleNavigate('/shop-cart');
+                                                } else {
+                                                    handleNavigate('/checkout');
+                                                }
+                                            }}
+                                            className="btn btn-secondary btn-block w-100 mb-2"
+                                            style={{
+                                                background: '#0D775E',
+                                                borderColor: '#0D775E',
+                                                borderRadius: '6px',
+                                                padding: '11px',
+                                                fontSize: '14px',
+                                                fontWeight: 600,
+                                                textTransform: 'none'
+                                            }}
+                                        >
+                                            Proceed to Checkout
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => handleNavigate('/shop-cart')}
+                                            className="btn btn-outline-secondary btn-block w-100"
+                                            style={{
+                                                borderRadius: '6px',
+                                                padding: '9px',
+                                                fontSize: '13.5px',
+                                                fontWeight: 500,
+                                                textTransform: 'none',
+                                                color: '#4B5563',
+                                                borderColor: '#D1D5DB'
+                                            }}
+                                        >
+                                            View Cart
+                                        </button>
+                                    </>
+                                ) : null
                             ) : (
-                                <button onClick={() => handleNavigate('/wishlist')} className="btn btn-secondary btn-block w-100" style={{ borderRadius: '0', padding: '15px', fontSize: '20px', textTransform: 'none', background: '#2D2E2F', color: '#fff', fontFamily: "'Marcellus', serif", fontWeight: '500' }}>
-                                    Check Your Favourite
+                                <button
+                                    type="button"
+                                    onClick={() => handleNavigate('/wishlist')}
+                                    className="btn btn-secondary btn-block w-100"
+                                    style={{
+                                        borderRadius: '6px',
+                                        padding: '11px',
+                                        fontSize: '15px',
+                                        textTransform: 'none',
+                                        background: '#2D2E2F',
+                                        borderColor: '#2D2E2F',
+                                        color: '#fff',
+                                        fontFamily: "'Marcellus', serif",
+                                        fontWeight: '500'
+                                    }}
+                                >
+                                    View Full Wishlist
                                 </button>
                             )}
                         </div>

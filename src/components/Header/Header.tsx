@@ -58,7 +58,12 @@ const Header: React.FC = () => {
             setIsLoggedInLocal(!!localStorage.getItem('user_accessToken'));
         };
 
-        const updateCartCount = async () => {
+        const updateCartCount = async (e?: Event) => {
+            const customEvt = e as CustomEvent;
+            if (customEvt?.detail?.count !== undefined && typeof customEvt.detail.count === 'number') {
+                setCartCount(customEvt.detail.count);
+                return;
+            }
             const token = localStorage.getItem('user_accessToken');
             if (token) {
                 try {
@@ -80,7 +85,12 @@ const Header: React.FC = () => {
             }
         };
 
-        const updateWishlistCount = async () => {
+        const updateWishlistCount = async (e?: Event) => {
+            const customEvt = e as CustomEvent;
+            if (customEvt?.detail?.count !== undefined && typeof customEvt.detail.count === 'number') {
+                setWishlistCount(customEvt.detail.count);
+                return;
+            }
             const token = localStorage.getItem('user_accessToken');
             if (token) {
                 try {
