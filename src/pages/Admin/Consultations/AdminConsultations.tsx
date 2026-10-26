@@ -35,6 +35,39 @@ const AdminConsultations: React.FC = () => {
     const [isEditingDate, setIsEditingDate] = useState(false);
     const [editDateValue, setEditDateValue] = useState('');
 
+    // Mark as Completed Modal State
+    const [isCompleteModalOpen, setIsCompleteModalOpen] = useState(false);
+    const [consultationToComplete, setConsultationToComplete] = useState<any>(null);
+    const [completePaymentAmount, setCompletePaymentAmount] = useState('');
+    const [completePaymentAmountError, setCompletePaymentAmountError] = useState('');
+    const [isCompleting, setIsCompleting] = useState(false);
+
+    // Add Consultation Payment Modal State (for Completed + Pending)
+    const [isAddPaymentModalOpen, setIsAddPaymentModalOpen] = useState(false);
+    const [consultationToAddPayment, setConsultationToAddPayment] = useState<any>(null);
+    const [addPaymentAmount, setAddPaymentAmount] = useState('');
+    const [addPaymentAmountError, setAddPaymentAmountError] = useState('');
+    const [isSavingPayment, setIsSavingPayment] = useState(false);
+
+    const getStoredPaymentAmounts = (): Record<string, number> => {
+        try {
+            const stored = localStorage.getItem('consultation_payment_amounts');
+            return stored ? JSON.parse(stored) : {};
+        } catch {
+            return {};
+        }
+    };
+
+    const storePaymentAmount = (id: string, amount: number) => {
+        try {
+            const current = getStoredPaymentAmounts();
+            current[id] = amount;
+            localStorage.setItem('consultation_payment_amounts', JSON.stringify(current));
+        } catch {
+            // ignore
+        }
+    };
+
     const checkDietPlansForConsultations = async (list: any[]) => {
         if (!Array.isArray(list) || list.length === 0) return;
         const completedList = list.filter(c => c.status?.toUpperCase() === 'COMPLETED');
@@ -107,16 +140,18 @@ const AdminConsultations: React.FC = () => {
         }
     }, [selectedConsultation]);
 
-    const handleStatusUpdate = async (id: string, updates: { status?: string; paymentStatus?: string; rejectionReason?: string }) => {
+    const handleStatusUpdate = async (id: string, updates: { status?: string; paymentStatus?: string; rejectionReason?: string; paymentAmount?: number }): Promise<boolean> => {
         try {
             setUpdatingStatus(true);
-            const res = await updateConsultationStatus(id, updates);
+            const res = await updateConsultationStatus(id, updates as any);
             if (res.success && res.data) {
                 let successMessage = 'Status updated successfully';
                 if (updates.status === 'APPROVED') {
                     successMessage = 'Consultation approved successfully.';
                 } else if (updates.status === 'REJECTED') {
                     successMessage = 'Consultation rejected successfully.';
+                } else if (updates.status === 'COMPLETED') {
+                    successMessage = 'Consultation marked as completed successfully.';
                 } else if (updates.paymentStatus === 'REFUNDED') {
                     successMessage = 'Refund marked as completed successfully.';
                 }
@@ -149,13 +184,267 @@ const AdminConsultations: React.FC = () => {
                     }
                     return prev;
                 });
+                return true;
             } else {
                 toast.error(res.message || 'Failed to update status');
+                return false;
             }
         } catch (error: any) {
             toast.error(error.response?.data?.message || 'Failed to update status');
+            return false;
         } finally {
             setUpdatingStatus(false);
+        }
+    };
+
+    const openCompleteModal = (c: any) => {
+        setConsultationToComplete(c);
+        setCompletePaymentAmount('');
+        setCompletePaymentAmountError('');
+        setIsCompleteModalOpen(true);
+    };
+
+    const closeCompleteModal = () => {
+        if (isCompleting) return;
+        setIsCompleteModalOpen(false);
+        setConsultationToComplete(null);
+        setCompletePaymentAmount('');
+        setCompletePaymentAmountError('');
+    };
+
+    const handleCompletePaymentAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const val = e.target.value;
+        // Accept empty string or positive numeric with optional single decimal point up to 2 decimal places
+        if (val === '' || /^\d+(\.\d{0,2})?$/.test(val) || /^\d+\.$/.test(val)) {
+            setCompletePaymentAmount(val);
+            if (completePaymentAmountError) {
+                setCompletePaymentAmountError('');
+            }
+        }
+    };
+
+    const handleCompleteSubmit = async () => {
+        if (!consultationToComplete) return;
+
+        const trimmed = completePaymentAmount.trim();
+        let numericAmount: number | undefined = undefined;
+
+        if (trimmed !== '') {
+            const num = Number(trimmed);
+            if (isNaN(num)) {
+                setCompletePaymentAmountError('Please enter a valid numeric payment amount.');
+                return;
+            }
+            if (num <= 0) {
+                setCompletePaymentAmountError('Payment amount must be greater than ₹0.');
+                return;
+            }
+            numericAmount = num;
+        }
+
+        const cId = consultationToComplete._id || consultationToComplete.id;
+        if (!cId) {
+            toast.error('Invalid consultation ID.');
+            return;
+        }
+
+        try {
+            setIsCompleting(true);
+            setCompletePaymentAmountError('');
+
+            const updates: any = { status: 'COMPLETED' };
+            if (numericAmount !== undefined) {
+                updates.paymentStatus = 'PAID';
+                updates.paymentAmount = numericAmount;
+            }
+
+            const res = await updateConsultationStatus(cId, updates);
+
+            if (res.success && res.data) {
+                if (numericAmount !== undefined) {
+                    storePaymentAmount(cId, numericAmount);
+                }
+                toast.success('Consultation marked as completed successfully.');
+                const updated = res.data;
+
+                // Update consultations list
+                setConsultations(prev => {
+                    const list = Array.isArray(prev) ? prev : [];
+                    return list.map(item => {
+                        const itemId = item.id || item._id;
+                        return itemId === cId
+                            ? {
+                                  ...item,
+                                  ...updated,
+                                  status: 'COMPLETED',
+                                  ...(numericAmount !== undefined
+                                      ? { paymentStatus: 'PAID', paymentAmount: numericAmount }
+                                      : {}),
+                                  _id: itemId,
+                                  id: itemId
+                              }
+                            : item;
+                    });
+                });
+
+                // Update selected consultation if view details is open
+                setSelectedConsultation((prev: any) => {
+                    if (prev) {
+                        const prevId = prev.id || prev._id;
+                        if (prevId === cId) {
+                            return {
+                                ...prev,
+                                ...updated,
+                                status: 'COMPLETED',
+                                ...(numericAmount !== undefined
+                                    ? { paymentStatus: 'PAID', paymentAmount: numericAmount }
+                                    : {}),
+                                _id: prevId,
+                                id: prevId
+                            };
+                        }
+                    }
+                    return prev;
+                });
+
+                setIsCompleteModalOpen(false);
+                setConsultationToComplete(null);
+                setCompletePaymentAmount('');
+            } else {
+                toast.error(res.message || 'Failed to complete consultation');
+            }
+        } catch (error: any) {
+            toast.error(error.response?.data?.message || 'Failed to complete consultation');
+        } finally {
+            setIsCompleting(false);
+        }
+    };
+
+    const validatePaymentAmountValue = (val: string): { isValid: boolean; error: string; num: number | null } => {
+        const trimmed = val.trim();
+        if (!trimmed) {
+            return { isValid: false, error: 'Payment amount is required.', num: null };
+        }
+        if (!/^\d+(\.\d{1,2})?$/.test(trimmed)) {
+            return { isValid: false, error: 'Please enter a valid numeric payment amount.', num: null };
+        }
+        const num = Number(trimmed);
+        if (isNaN(num)) {
+            return { isValid: false, error: 'Please enter a valid numeric payment amount.', num: null };
+        }
+        if (num <= 0) {
+            return { isValid: false, error: 'Payment amount must be greater than ₹0.', num: null };
+        }
+        return { isValid: true, error: '', num };
+    };
+
+    const isAddPaymentAmountValid = validatePaymentAmountValue(addPaymentAmount).isValid;
+
+    const openAddPaymentModal = (c: any) => {
+        setConsultationToAddPayment(c);
+        setAddPaymentAmount('');
+        setAddPaymentAmountError('');
+        setIsAddPaymentModalOpen(true);
+    };
+
+    const closeAddPaymentModal = () => {
+        if (isSavingPayment) return;
+        setIsAddPaymentModalOpen(false);
+        setConsultationToAddPayment(null);
+        setAddPaymentAmount('');
+        setAddPaymentAmountError('');
+    };
+
+    const handleAddPaymentAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const val = e.target.value;
+        // Accept empty string or positive numeric with optional single decimal point up to 2 decimal places
+        if (val === '' || /^\d+(\.\d{0,2})?$/.test(val) || /^\d+\.$/.test(val)) {
+            setAddPaymentAmount(val);
+            if (val.trim() === '') {
+                setAddPaymentAmountError('');
+            } else {
+                const validation = validatePaymentAmountValue(val);
+                setAddPaymentAmountError(validation.isValid ? '' : validation.error);
+            }
+        }
+    };
+
+    const handleAddPaymentSubmit = async () => {
+        if (!consultationToAddPayment) return;
+
+        const validation = validatePaymentAmountValue(addPaymentAmount);
+        if (!validation.isValid || validation.num === null) {
+            setAddPaymentAmountError(validation.error);
+            return;
+        }
+
+        const num = validation.num;
+        const cId = consultationToAddPayment._id || consultationToAddPayment.id;
+        if (!cId) {
+            toast.error('Invalid consultation ID.');
+            return;
+        }
+
+        try {
+            setIsSavingPayment(true);
+            setAddPaymentAmountError('');
+
+            const res = await updateConsultationStatus(cId, {
+                paymentStatus: 'PAID',
+                paymentAmount: num
+            } as any);
+
+            if (res.success && res.data) {
+                storePaymentAmount(cId, num);
+                toast.success('Payment recorded successfully as Paid.');
+                const updated = res.data;
+
+                // Update consultations list
+                setConsultations(prev => {
+                    const list = Array.isArray(prev) ? prev : [];
+                    return list.map(item => {
+                        const itemId = item.id || item._id;
+                        return itemId === cId
+                            ? {
+                                  ...item,
+                                  ...updated,
+                                  paymentStatus: 'PAID',
+                                  paymentAmount: num,
+                                  _id: itemId,
+                                  id: itemId
+                              }
+                            : item;
+                    });
+                });
+
+                // Update selected consultation if view details is open
+                setSelectedConsultation((prev: any) => {
+                    if (prev) {
+                        const prevId = prev.id || prev._id;
+                        if (prevId === cId) {
+                            return {
+                                ...prev,
+                                ...updated,
+                                paymentStatus: 'PAID',
+                                paymentAmount: num,
+                                _id: prevId,
+                                id: prevId
+                            };
+                        }
+                    }
+                    return prev;
+                });
+
+                setIsAddPaymentModalOpen(false);
+                setConsultationToAddPayment(null);
+                setAddPaymentAmount('');
+            } else {
+                toast.error(res.message || 'Failed to save payment');
+            }
+        } catch (error: any) {
+            toast.error(error.response?.data?.message || 'Failed to save payment');
+        } finally {
+            setIsSavingPayment(false);
         }
     };
 
@@ -271,8 +560,9 @@ const AdminConsultations: React.FC = () => {
             s = 'PAID';
         }
         
+        const isCompleted = c.status?.toUpperCase() === 'COMPLETED';
+        const isPaymentClickable = isCompleted && s === 'PENDING';
         const isRefundPending = s === 'REFUND_PENDING' && c.status?.toUpperCase() === 'REJECTED';
-        const isOldRejectedPending = s === 'PENDING' && c.status?.toUpperCase() === 'REJECTED';
 
         switch (s) {
             case 'PENDING': return (
@@ -282,15 +572,17 @@ const AdminConsultations: React.FC = () => {
                         backgroundColor: '#fef3c7', 
                         color: '#92400e', 
                         border: '1px solid #fde68a',
-                        cursor: isOldRejectedPending ? 'pointer' : 'default',
+                        cursor: isPaymentClickable ? 'pointer' : 'default',
+                        boxShadow: isPaymentClickable ? '0 1px 2px rgba(0,0,0,0.05)' : 'none',
+                        transition: 'all 0.15s ease'
                     }}
                     onClick={(e) => {
-                        if (isOldRejectedPending) {
+                        if (isPaymentClickable) {
                             e.stopPropagation();
-                            handleSetRefundPending(c);
+                            openAddPaymentModal(c);
                         }
                     }}
-                    title={isOldRejectedPending ? "Click to set as Refund Pending" : ""}
+                    title={isPaymentClickable ? "Click to add payment" : ""}
                 >
                     Pending
                 </span>
@@ -656,7 +948,22 @@ const AdminConsultations: React.FC = () => {
                                 </div>
                                 <div className="col-md-6">
                                     <h6 className="fw-bold text-muted text-uppercase small mb-3">Payment Details</h6>
-                                    <div className="mb-2">{getPaymentBadge(selectedConsultation)}</div>
+                                    <div className="mb-2 d-flex align-items-center gap-2">
+                                        {getPaymentBadge(selectedConsultation)}
+                                        {selectedConsultation.status?.toUpperCase() === 'COMPLETED' && selectedConsultation.paymentStatus?.toUpperCase() !== 'PAID' && selectedConsultation.paymentStatus?.toUpperCase() !== 'REFUNDED' && (
+                                            <button 
+                                                type="button"
+                                                className="btn btn-sm btn-outline-success" 
+                                                style={{ borderRadius: '8px', fontSize: '0.75rem', padding: '2px 8px', fontWeight: 600 }}
+                                                onClick={() => openAddPaymentModal(selectedConsultation)}
+                                            >
+                                                Add Payment
+                                            </button>
+                                        )}
+                                    </div>
+                                    {(selectedConsultation.paymentAmount || getStoredPaymentAmounts()[selectedConsultation._id || selectedConsultation.id]) && (
+                                        <p className="mb-1 mt-2"><strong>Payment Amount:</strong> ₹{selectedConsultation.paymentAmount || getStoredPaymentAmounts()[selectedConsultation._id || selectedConsultation.id]}</p>
+                                    )}
                                     <p className="mb-1 mt-2"><strong>UTR:</strong> {selectedConsultation.upiReference ? <span style={{fontFamily: 'monospace', fontWeight: 600}}>{selectedConsultation.upiReference}</span> : 'N/A'}</p>
                                 </div>
                             </div>
@@ -689,21 +996,8 @@ const AdminConsultations: React.FC = () => {
                                 <button 
                                     className="btn btn-primary" 
                                     style={{ borderRadius: '12px' }}
-                                    onClick={async () => {
-                                        const result = await Swal.fire({
-                                            title: 'Mark as Completed?',
-                                            text: 'Are you sure you want to mark this consultation as completed? This will allow you to add a diet plan.',
-                                            icon: 'question',
-                                            showCancelButton: true,
-                                            confirmButtonColor: '#22c55e',
-                                            cancelButtonColor: '#ef4444',
-                                            confirmButtonText: 'Yes, mark completed'
-                                        });
-                                        if (result.isConfirmed) {
-                                            await handleStatusUpdate(selectedConsultation._id, { status: 'COMPLETED' });
-                                        }
-                                    }}
-                                    disabled={updatingStatus}
+                                    onClick={() => openCompleteModal(selectedConsultation)}
+                                    disabled={updatingStatus || isCompleting}
                                 >
                                     Mark as Completed
                                 </button>
@@ -775,6 +1069,198 @@ const AdminConsultations: React.FC = () => {
                 </div>
             )}
 
+            {/* Mark as Completed Confirmation Modal */}
+            {isCompleteModalOpen && consultationToComplete && (
+                <div className="cancellation-reason-overlay" style={{ zIndex: 1100 }}>
+                    <div className="cancellation-reason-box admin-card p-4" style={{ maxWidth: '440px', background: '#ffffff' }}>
+                        <div className="d-flex justify-content-between align-items-center mb-3">
+                            <h5 className="fw-bold mb-0">Mark Consultation as Completed</h5>
+                            <button 
+                                type="button" 
+                                className="btn-close" 
+                                onClick={closeCompleteModal}
+                                disabled={isCompleting}
+                                aria-label="Close"
+                            ></button>
+                        </div>
+                        
+                        <p className="text-muted small mb-3">
+                            Are you sure you want to mark this consultation as completed?
+                        </p>
+
+                        <div className="mb-3">
+                            <label className="form-label fw-bold small mb-1">
+                                Payment Amount
+                            </label>
+                            <div style={{ position: 'relative' }}>
+                                <span 
+                                    style={{ 
+                                        position: 'absolute', 
+                                        left: '14px', 
+                                        top: '50%', 
+                                        transform: 'translateY(-50%)', 
+                                        color: '#64748b', 
+                                        fontWeight: 600,
+                                        fontSize: '1rem',
+                                        pointerEvents: 'none'
+                                    }}
+                                >
+                                    ₹
+                                </span>
+                                <input
+                                    type="text"
+                                    inputMode="decimal"
+                                    className="admin-input w-100"
+                                    style={{
+                                        paddingLeft: '32px',
+                                        borderColor: completePaymentAmountError ? '#ef4444' : '#e2e8f0',
+                                        borderRadius: '12px',
+                                        fontWeight: 500,
+                                        fontSize: '0.95rem'
+                                    }}
+                                    placeholder="Enter payment amount (optional)"
+                                    value={completePaymentAmount}
+                                    onChange={handleCompletePaymentAmountChange}
+                                    disabled={isCompleting}
+                                    autoFocus
+                                />
+                            </div>
+                            {completePaymentAmountError ? (
+                                <div className="text-danger small mt-1" style={{ fontSize: '0.8rem' }}>
+                                    {completePaymentAmountError}
+                                </div>
+                            ) : (
+                                <div className="text-muted small mt-1" style={{ fontSize: '0.8rem' }}>
+                                    Optional — leave blank if payment has not been received yet.
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="d-flex gap-2 justify-content-end mt-4">
+                            <button 
+                                type="button"
+                                className="btn btn-light" 
+                                style={{ borderRadius: '12px' }} 
+                                onClick={closeCompleteModal}
+                                disabled={isCompleting}
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                type="button"
+                                className="btn btn-primary"
+                                style={{ borderRadius: '12px', minWidth: '140px' }}
+                                onClick={handleCompleteSubmit}
+                                disabled={isCompleting}
+                            >
+                                {isCompleting ? (
+                                    <span className="d-flex align-items-center gap-2 justify-content-center">
+                                        <Loader2 className="animate-spin" size={16} /> Processing...
+                                    </span>
+                                ) : (
+                                    'Mark Completed'
+                                )}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Add Consultation Payment Modal */}
+            {isAddPaymentModalOpen && consultationToAddPayment && (
+                <div className="cancellation-reason-overlay" style={{ zIndex: 1100 }}>
+                    <div className="cancellation-reason-box admin-card p-4" style={{ maxWidth: '440px', background: '#ffffff' }}>
+                        <div className="d-flex justify-content-between align-items-center mb-3">
+                            <h5 className="fw-bold mb-0">Add Consultation Payment</h5>
+                            <button 
+                                type="button" 
+                                className="btn-close" 
+                                onClick={closeAddPaymentModal}
+                                disabled={isSavingPayment}
+                                aria-label="Close"
+                            ></button>
+                        </div>
+
+                        <div className="p-3 mb-3 bg-light" style={{ fontSize: '0.875rem', borderRadius: '12px' }}>
+                            <p className="mb-1"><strong>Patient:</strong> {consultationToAddPayment.fullName || '-'}</p>
+                            <p className="mb-1"><strong>Date:</strong> {formatDate(consultationToAddPayment.appointmentDate)} {consultationToAddPayment.appointmentTime ? `(${consultationToAddPayment.appointmentTime})` : ''}</p>
+                            <p className="mb-0"><strong>Status:</strong> <span className="admin-badge" style={{ backgroundColor: '#d8b4fe', color: '#581c87', border: '1px solid #c084fc', fontSize: '0.75rem', padding: '2px 8px' }}>Completed</span></p>
+                        </div>
+
+                        <div className="mb-4">
+                            <label className="form-label fw-bold small mb-1">
+                                Payment Amount <span className="text-danger">*</span>
+                            </label>
+                            <div style={{ position: 'relative' }}>
+                                <span 
+                                    style={{ 
+                                        position: 'absolute', 
+                                        left: '14px', 
+                                        top: '50%', 
+                                        transform: 'translateY(-50%)', 
+                                        color: '#64748b', 
+                                        fontWeight: 600,
+                                        fontSize: '1rem',
+                                        pointerEvents: 'none'
+                                    }}
+                                >
+                                    ₹
+                                </span>
+                                <input
+                                    type="text"
+                                    inputMode="decimal"
+                                    className="admin-input w-100"
+                                    style={{
+                                        paddingLeft: '32px',
+                                        borderColor: addPaymentAmountError ? '#ef4444' : '#e2e8f0',
+                                        borderRadius: '12px',
+                                        fontWeight: 500,
+                                        fontSize: '0.95rem'
+                                    }}
+                                    placeholder="Enter payment amount"
+                                    value={addPaymentAmount}
+                                    onChange={handleAddPaymentAmountChange}
+                                    disabled={isSavingPayment}
+                                    autoFocus
+                                />
+                            </div>
+                            {addPaymentAmountError && (
+                                <div className="text-danger small mt-1" style={{ fontSize: '0.8rem' }}>
+                                    {addPaymentAmountError}
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="d-flex gap-2 justify-content-end">
+                            <button 
+                                type="button"
+                                className="btn btn-light" 
+                                style={{ borderRadius: '12px' }} 
+                                onClick={closeAddPaymentModal}
+                                disabled={isSavingPayment}
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                type="button"
+                                className="btn btn-success"
+                                style={{ borderRadius: '12px', minWidth: '130px' }}
+                                onClick={handleAddPaymentSubmit}
+                                disabled={!isAddPaymentAmountValid || isSavingPayment}
+                            >
+                                {isSavingPayment ? (
+                                    <span className="d-flex align-items-center gap-2 justify-content-center">
+                                        <Loader2 className="animate-spin" size={16} /> Saving...
+                                    </span>
+                                ) : (
+                                    'Save Payment'
+                                )}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             <style>{`
                 .cancellation-reason-overlay {
                     position: fixed; top: 0; left: 0; right: 0; bottom: 0;
@@ -788,6 +1274,11 @@ const AdminConsultations: React.FC = () => {
                     border: 1px solid #e2e8f0; border-radius: 12px; padding: 12px; font-size: 0.95rem; outline: none;
                 }
                 .admin-input:focus { border-color: var(--admin-primary); box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.1); }
+                .admin-swal-deny {
+                    border-radius: 12px !important;
+                    font-weight: 600 !important;
+                    padding: 10px 20px !important;
+                }
             `}</style>
             {isDietPlanFormOpen && selectedConsultation && (
                 <AdminDietPlanForm 

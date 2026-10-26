@@ -1,8 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
-import { createConsultationBooking, getAvailableSlots, getUserConsultationSettings, updateConsultationPayment } from '../../../services/api/consultationApi';
-import userApiClient from '../../../services/userApiClient';
+import { createConsultationBooking, getAvailableSlots, getUserConsultationSettings } from '../../../services/api/consultationApi';
 import { Loader2, AlertCircle, Upload, Send, Plus, CheckCircle } from 'lucide-react';
 import Select from 'react-select';
 import './ConsultationBooking.css';
@@ -19,21 +18,8 @@ const ConsultationBooking: React.FC = () => {
     const [slotMessage, setSlotMessage] = useState<string>('No slots available');
     
     const [isSuccess, setIsSuccess] = useState(false);
-    const [bookingId, setBookingId] = useState<string>('');
     const [medicalReports, setMedicalReports] = useState<File[]>([]);
     const [visibleUploadRows, setVisibleUploadRows] = useState<number>(1);
-    
-    // UTR and QR states
-    const [upiReference, setUpiReference] = useState('');
-    const [utrError, setUtrError] = useState('');
-    const [showQR, setShowQR] = useState(false);
-    const [isPaymentConfirmed, setIsPaymentConfirmed] = useState(false);
-    const [submittingPayment, setSubmittingPayment] = useState(false);
-    const qrCanvasRef = useRef<HTMLCanvasElement>(null);
-    
-    // Payment Settings State
-    const [paymentSettings, setPaymentSettings] = useState<{_id?: string, qrCodeImage?: string, upiId?: string, phoneNumber?: string} | null>(null);
-    const [fetchingPayment, setFetchingPayment] = useState(false);
     
     // Country Options
     const [countryOptions, setCountryOptions] = useState<{value: string, label: string}[]>([]);
@@ -117,17 +103,6 @@ const ConsultationBooking: React.FC = () => {
         }
     }, [formData, isSuccess]);
 
-    useEffect(() => {
-        setFetchingPayment(true);
-        userApiClient.get('/user/payment-settings')
-            .then(res => {
-                if (res.data.success && res.data.settings) {
-                    setPaymentSettings(res.data.settings);
-                }
-            })
-            .catch(err => console.error('Failed to fetch payment settings:', err))
-            .finally(() => setFetchingPayment(false));
-    }, []);
 
     useEffect(() => {
         const fetchSettings = async () => {
@@ -372,15 +347,14 @@ const ConsultationBooking: React.FC = () => {
                 vegetarian: formData.foodPreference === 'Vegetarian',
                 nonVegetarian: formData.foodPreference === 'Non-Vegetarian',
                 seekingInfertilityConsultation: formData.seekingInfertilityConsultation === 'Yes',
-                paymentAccountId: paymentSettings ? paymentSettings._id : undefined,
                 medicalReports: base64Reports
             };
 
             const res = await createConsultationBooking(payload);
             if (res.success) {
-                setBookingId(res.data.id);
                 setIsSuccess(true);
                 localStorage.removeItem(STORAGE_KEY);
+                toast.success(res.message || 'Consultation booked successfully');
                 window.scrollTo({ top: 0, behavior: 'smooth' });
             } else {
                 toast.error(res.message || 'Failed to book consultation');
@@ -1107,200 +1081,22 @@ const ConsultationBooking: React.FC = () => {
                                         </>
                                     ) : (
                                         <div id="paymentSection" className="text-center max-w-2xl mx-auto">
-                                            {isPaymentConfirmed ? (
-                                                <div className="consultation-success-card">
-                                                    <CheckCircle className="consultation-success-icon" />
-                                                    <h4 className="consultation-success-title">
-                                                        Consultation Booked Successfully
-                                                    </h4>
-                                                    <p className="consultation-success-message">
-                                                        Your payment details have been submitted and are awaiting verification.
-                                                    </p>
-                                                    <button 
-                                                        onClick={() => navigate('/account/consultations')} 
-                                                        className="consultation-action-btn primary"
-                                                        style={{ minWidth: '200px' }}
-                                                    >
-                                                        Return to Dashboard
-                                                    </button>
-                                                </div>
-                                            ) : (
-                                                <>
-                                                    <h4 className="text-[#198754] text-[1.5rem] mb-[28px] font-normal">
-                                                        <AlertCircle className="inline w-6 h-6 mr-2" /> Registration Submitted Successfully!
-                                                    </h4>
-                                                    
-                                                    {fetchingPayment ? (
-                                                        <div className="py-8">
-                                                            <Loader2 className="animate-spin w-8 h-8 text-[#198754] mx-auto mb-4" />
-                                                            <p className="text-gray-500">Loading payment details...</p>
-                                                        </div>
-                                                    ) : paymentSettings && (paymentSettings.qrCodeImage || paymentSettings.upiId) ? (
-                                                        <>
-                                                            <p className="mb-[24px] text-lg text-[#333]">Please scan the QR code below to complete your payment via UPI to book the consultation.</p>
-                                                                                                                     <div className="flex flex-col items-center justify-center text-center mb-8 w-full max-w-md mx-auto">
-                                                                {paymentSettings.qrCodeImage && (
-                                                                    <div className="consultation-qr-section w-full mb-6">
-                                                                        <p className="text-sm text-[#666] mb-3">Click View QR Code to reveal the payment QR.</p>
-                                                                        
-                                                                        <div className="consultation-qr-wrapper bg-white border shadow-sm p-3 rounded-lg mx-auto mb-4" style={{maxWidth: '300px'}}>
-                                                                            <img src={paymentSettings.qrCodeImage} alt="UPI Payment QR Code" className={`w-full h-auto ${!showQR ? 'qr-blur' : 'qr-revealed'}`} />
-                                                                        </div>
-                                                                        
-                                                                        <div className="consultation-qr-actions flex justify-center gap-3 w-full">
-                                                                            <button 
-                                                                                type="button" 
-                                                                                className="consultation-action-btn"
-                                                                                onClick={() => setShowQR(!showQR)}
-                                                                            >
-                                                                                {showQR ? 'Hide QR Code' : 'View QR Code'}
-                                                                            </button>
-                                                                            
-                                                                            <button 
-                                                                                type="button" 
-                                                                                className="consultation-action-btn primary"
-                                                                                onClick={(e) => {
-                                                                                    e.preventDefault();
-                                                                                    e.stopPropagation();
-                                                                                    const canvas = qrCanvasRef.current;
-                                                                                    if (canvas && paymentSettings.qrCodeImage) {
-                                                                                        const ctx = canvas.getContext('2d');
-                                                                                        if (ctx) {
-                                                                                            const img = new Image();
-                                                                                            if (paymentSettings.qrCodeImage.startsWith('http')) {
-                                                                                                img.crossOrigin = "anonymous";
-                                                                                            }
-                                                                                            img.onload = () => {
-                                                                                                try {
-                                                                                                    canvas.width = img.width;
-                                                                                                    canvas.height = img.height + 150;
-                                                                                                    ctx.fillStyle = "#ffffff";
-                                                                                                    ctx.fillRect(0, 0, canvas.width, canvas.height);
-                                                                                                    ctx.drawImage(img, 0, 0);
-                                                                                                    
-                                                                                                    ctx.fillStyle = "#000000";
-                                                                                                    ctx.font = "bold 18px Arial";
-                                                                                                    ctx.textAlign = "center";
-                                                                                                    
-                                                                                                    let yOffset = img.height + 35;
-                                                                                                    
-                                                                                                    ctx.fillText(`Natural Edibles`, canvas.width / 2, yOffset);
-                                                                                                    yOffset += 25;
-                                                                                                    ctx.fillText(`Consultation Payment`, canvas.width / 2, yOffset);
-                                                                                                    yOffset += 25;
-                                                                                                    
-                                                                                                    if (settings?.consultationFee) {
-                                                                                                        ctx.fillText(`Amount: ₹${settings.consultationFee}`, canvas.width / 2, yOffset);
-                                                                                                        yOffset += 25;
-                                                                                                    }
-                                                                                                    
-                                                                                                    if (paymentSettings.upiId) {
-                                                                                                        ctx.fillText(`UPI ID: ${paymentSettings.upiId}`, canvas.width / 2, yOffset);
-                                                                                                    }
-                                                                                                    
-                                                                                                    const link = document.createElement('a');
-                                                                                                    link.download = `NatureEdibles-Consultation-QR.png`;
-                                                                                                    link.href = canvas.toDataURL('image/png');
-                                                                                                    link.click();
-                                                                                                } catch (err) {
-                                                                                                    console.error("Canvas export failed", err);
-                                                                                                    const link = document.createElement('a');
-                                                                                                    link.download = 'NatureEdibles-QR.png';
-                                                                                                    link.href = paymentSettings.qrCodeImage as string;
-                                                                                                    link.target = "_blank";
-                                                                                                    link.click();
-                                                                                                }
-                                                                                            };
-                                                                                            img.onerror = () => {
-                                                                                                const link = document.createElement('a');
-                                                                                                link.download = 'NatureEdibles-QR.png';
-                                                                                                link.href = paymentSettings.qrCodeImage as string;
-                                                                                                link.target = "_blank";
-                                                                                                link.click();
-                                                                                            };
-                                                                                            img.src = paymentSettings.qrCodeImage + (paymentSettings.qrCodeImage.includes('?') ? '&' : '?') + 'not-from-cache-please';
-                                                                                        }
-                                                                                    }
-                                                                                }}
-                                                                            >
-                                                                                Save QR to Gallery
-                                                                            </button>
-                                                                        </div>
-                                                                        
-                                                                        <canvas ref={qrCanvasRef} style={{ display: 'none' }} />
-                                                                    </div>
-                                                                )}
-                                                                
-                                                                <div className="w-full flex flex-col gap-6">
-                                                                    <div className="bg-[#F8F9FA] p-5 rounded-lg border border-[#E5E7EB] text-center shadow-sm w-full">
-                                                                        <h5 className="font-bold text-[#2D2E2F] mb-3 border-b pb-2">Payment Details</h5>
-                                                                        {settings?.consultationFee && <p className="text-[#333] mb-2 text-md">Amount: <strong>₹{settings.consultationFee}</strong></p>}
-                                                                        {paymentSettings.upiId && <p className="text-[#333] mb-2 text-md">UPI ID: <strong>{paymentSettings.upiId}</strong></p>}
-                                                                        {paymentSettings.phoneNumber && <p className="text-[#666] mb-0 text-sm">Phone: {paymentSettings.phoneNumber}</p>}
-                                                                    </div>
-                                                                    
-                                                                    <div className="utr-form-container text-center mt-2 w-full">
-                                                                        <h5 className="font-bold text-[#2D2E2F] mb-3 border-b pb-2">Confirm Payment</h5>
-                                                                        <label className="font-bold text-[#2D2E2F] mb-1 text-sm block">Enter the 12-digit UPI Transaction Reference / UTR</label>
-                                                                        <div className="flex flex-col mt-4">
-                                                                            <input 
-                                                                                type="text" 
-                                                                                inputMode="numeric"
-                                                                                maxLength={12}
-                                                                                className="custom-input consultation-utr-input mx-auto text-center font-bold tracking-widest text-lg" 
-                                                                                style={{ maxWidth: '280px', letterSpacing: '4px' }}
-                                                                                placeholder="123456789012" 
-                                                                                value={upiReference}
-                                                                                onChange={(e) => {
-                                                                                    setUpiReference(e.target.value.replace(/\D/g, '').slice(0, 12));
-                                                                                    setUtrError('');
-                                                                                }}
-                                                                            />
-                                                                            {utrError && <div className="consultation-error-text mb-2">{utrError}</div>}
-                                                                            
-                                                                            <button 
-                                                                                className="consultation-action-btn primary mt-4 mx-auto w-full"
-                                                                                style={{ maxWidth: '280px' }}
-                                                                                onClick={async () => {
-                                                                                    const trimmed = upiReference.trim();
-                                                                                    if (!/^\d{12}$/.test(trimmed)) {
-                                                                                        setUtrError('Please enter a valid 12-digit UPI Transaction Reference / UTR.');
-                                                                                        return;
-                                                                                    }
-                                                                                    setSubmittingPayment(true);
-                                                                                    try {
-                                                                                        const res = await updateConsultationPayment(bookingId, trimmed);
-                                                                                        if (res.success) {
-                                                                                            setIsPaymentConfirmed(true);
-                                                                                            window.scrollTo({ top: 0, behavior: 'smooth' });
-                                                                                        } else {
-                                                                                            toast.error(res.message || 'Failed to confirm payment');
-                                                                                        }
-                                                                                    } catch (err: any) {
-                                                                                        toast.error(err.response?.data?.message || 'Error updating payment');
-                                                                                    } finally {
-                                                                                        setSubmittingPayment(false);
-                                                                                    }
-                                                                                }}
-                                                                                disabled={submittingPayment}
-                                                                            >
-                                                                                {submittingPayment ? <Loader2 className="animate-spin w-5 h-5 mx-auto" /> : 'Submit Payment Details'}
-                                                                            </button>
-                                                                        </div>
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                        </>
-                                                    ) : (
-                                                        <div className="bg-[#f8f9fa] p-6 rounded-lg mx-auto mb-[28px] border max-w-md">
-                                                            <AlertCircle className="w-10 h-10 text-[#6c757d] mx-auto mb-3" />
-                                                            <h4 className="text-[#212529] font-bold text-lg mb-2">Payment Method Unavailable</h4>
-                                                            <p className="text-[#6c757d] mb-0 font-medium">No payment method is currently available.</p>
-                                                            <p className="text-[#6c757d] mt-1 text-sm">Please contact the administrator.</p>
-                                                        </div>
-                                                    )}
-                                                </>
-                                            )}
+                                            <div className="consultation-success-card">
+                                                <CheckCircle className="consultation-success-icon" />
+                                                <h4 className="consultation-success-title">
+                                                    Consultation Booked Successfully
+                                                </h4>
+                                                <p className="consultation-success-message">
+                                                    Your consultation booking has been submitted and is awaiting approval.
+                                                </p>
+                                                <button 
+                                                    onClick={() => navigate('/account/consultations')} 
+                                                    className="consultation-action-btn primary"
+                                                    style={{ minWidth: '200px' }}
+                                                >
+                                                    Return to Dashboard
+                                                </button>
+                                            </div>
                                         </div>
                                     )}
                                 </div>
